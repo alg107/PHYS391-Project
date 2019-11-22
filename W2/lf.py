@@ -47,7 +47,7 @@ metallicity_bins = 39
 
 IMF_mean = 0.079
 IMF_std = 0.69
-IMF_bins = 39
+IMF_bins = 100
 
 # 2: Sampling
 # 2.1: Metallicity
@@ -77,7 +77,7 @@ MM = np.column_stack((sampled_metallicities, sampled_IMF))
 # Taking the useful stuff from the isochrone table
 iso_table = np.loadtxt("iso.db")
 MH = iso_table[:,1]
-masses = iso_table[:,5]
+masses = iso_table[:,3]
 Kmag = iso_table[:,32]
 types = iso_table[:,9]
 
@@ -97,66 +97,65 @@ ax.set_zlabel("metallicity")
 metal_inf = np.min(MH)
 metal_sup = np.max(MH)
 print(metal_inf, metal_sup)
-histplots = []
 
 plt.figure()
 # Doing each type individually
-for type_ in [1,2,3]:
-    sampled_mags = []
-    # Cutting the isochrone into constant metallicity slices
-    for i, MHval in enumerate(sampled_metallicities):
-        nearestMH = find_nearest(MH, MHval)
-        mags_i = []
-        mass_i = []
-        types_i = []
-        for j, val in enumerate(MH):
-            if val==nearestMH:
-                mags_i.append(Kmag[j])
-                mass_i.append(masses[j])
-                types_i.append(classify_stage(types[j]))
-        mags_i = np.array(mags_i)
-        mass_i = np.array(mass_i)
-        types_i = np.array(types_i)
+sampled_mags = []
+# Cutting the isochrone into constant metallicity slices
+for i, MHval in enumerate(sampled_metallicities):
+    nearestMH = find_nearest(MH, MHval)
+    mags_i = []
+    mass_i = []
+    types_i = []
+    for j, val in enumerate(MH):
+        if val==nearestMH:
+            mags_i.append(Kmag[j])
+            mass_i.append(masses[j])
+            types_i.append(classify_stage(types[j]))
+    mags_i = np.array(mags_i)
+    mass_i = np.array(mass_i)
+    types_i = np.array(types_i)
 
-        # Puts these all together in a big array
-        data = np.column_stack((mass_i, mags_i, types_i))
+    # Puts these all together in a big array
+    data = np.column_stack((mass_i, mags_i, types_i))
 
-        # Isolating the different types
-        redgiants = data[data[:,2] == 1] 
-        RC = data[data[:,2] == 2] 
-        asymp = data[data[:,2] == 3] 
+    # Isolating the different types
+    redgiants = data[data[:,2] == 1] 
+    RC = data[data[:,2] == 2] 
+    asymp = data[data[:,2] == 3] 
 
-        # The one we're going to be using
-        pnts = data[data[:,2] == type_] 
+    # The one we're going to be using
+    pnts = data
 
 
-        # Using a linear spline to connect fixed points
-        x = np.linspace(np.min(pnts[:,0]),np.max(pnts[:,0]),1000)
-        spl = interp1d(pnts[:,0], pnts[:,1])
+    # Using a linear spline to connect fixed points
+    x = np.linspace(np.min(pnts[:,0]),np.max(pnts[:,0]),100000)
+    spl = interp1d(pnts[:,0], pnts[:,1])
 
-        # Restrictions on mass based on isochrone
-        mass_inf = np.min(pnts[:,0])
-        mass_sup = np.max(pnts[:,0])
-        
-        # Getting a mass to go with the chosen metallicity
-        mass = sampled_IMF[i]
+    # Restrictions on mass based on isochrone
+    mass_inf = np.min(pnts[:,0])
+    mass_sup = np.max(pnts[:,0])
+    
+    # Getting a mass to go with the chosen metallicity
+    mass = sampled_IMF[i]
 
-        # If metallicity and mass can be used to interpolate from isochrone
-        if metal_inf <= MHval <= metal_sup and mass_inf <= mass <= mass_sup:
-            est_mag = spl(mass)
-            sampled_mags.append(est_mag)
+    # If metallicity and mass can be used to interpolate from isochrone
+    if mass_inf <= mass <= mass_sup:
+        est_mag = spl(mass)
+        sampled_mags.append(est_mag)
 
-        # Plotting a sample slice
-        if i==50: 
-            for row in pnts:
-                plt.scatter(row[0], row[1], color=colour_from_type(row[2]))
-            plt.plot(x, spl(x))
-            plt.xlabel("Mass")
-            plt.ylabel("Magnitude")
+    # Plotting a sample slice
+    if i==50: 
+        for row in pnts:
+            plt.scatter(row[0], row[1], color=colour_from_type(row[2]))
+        plt.plot(x, spl(x))
+        #plt.xlim(0.95, 0.958)
+        plt.xlabel("Mass")
+        plt.ylabel("Magnitude")
+        plt.gca().invert_yaxis()
 
-    sampled_mags = np.array(sampled_mags)
-    # Building up a 2D array to plot histograms outside the loop
-    histplots.append(sampled_mags)
+sampled_mags = np.array(sampled_mags)
+# Building up a 2D array to plot histograms outside the loop
 
 
 
@@ -165,8 +164,7 @@ plt.figure()
 
 # Plotting the histograms on top of each other
 bins_seq = np.linspace(-10, 10, 100)
-for i in histplots:
-    plt.hist(i, bins_seq, density=True, histtype='step')
+plt.hist(sampled_mags, bins_seq, density=True, histtype='step')
 plt.xlabel("Magnitude")
 plt.ylabel("Density")
 
