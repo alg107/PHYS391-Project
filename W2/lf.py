@@ -1,12 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, make_interp_spline, BSpline
+import scipy.stats as ss
+import IMF
 
 # 1: Constant and Helper Function Definition
 
 bulge_age = 10 #Gyr
-N = int(1e3)
+
+# The number of samples of metallicity and IMF
+N = int(1e6)
 
 # Finds nearest value in an array
 def find_nearest(array, value):
@@ -45,8 +49,6 @@ metallicity_bins = 39
 
 # IMF
 
-IMF_mean = 0.079
-IMF_std = 0.69
 IMF_bins = 100
 
 # 2: Sampling
@@ -57,18 +59,26 @@ sampled_metallicities = np.random.normal(metallicity_mean, metallicity_std, N)
 
 plt.figure()
 plt.title("Metallicity Distribution")
-metallicity_bins_seq = np.linspace(-2.279, 0.198, 39)
-plt.hist(sampled_metallicities, metallicity_bins_seq, density=True, histtype='step')
+#metallicity_bins_seq = np.linspace(-2.279, 0.198, 39)
+plt.hist(sampled_metallicities, 100, density=True, histtype='step')
+X = np.linspace(-2*metallicity_std, 2*metallicity_std, 10000)
+plt.plot(X, ss.norm.pdf(X, metallicity_mean, metallicity_std))
+
+print("Metallicity Done")
 
 # 2.2: IMF
 
 # Sampling masses from lognormal IMF
-# Does it matter that this has natural log and the log in Chabrier is unspecified?
-sampled_IMF = np.random.lognormal(IMF_mean, IMF_std, N)
+sampled_IMF = IMF.IMF_sample(N)
 
 plt.figure()
 plt.title("IMF Distribution")
-plt.hist(sampled_IMF, IMF_bins, density=True, histtype='step')
+IMF_seq = np.linspace(0, 2, IMF_bins)
+plt.hist(sampled_IMF, IMF_seq, density=True, histtype='step')
+X = np.linspace(0.001, 2, 10000)
+plt.plot(X, IMF.chabrier(X))
+
+print("Masses Done")
 
 # 3: Isochrones
 
@@ -90,6 +100,8 @@ ax.set_xlabel("mass")
 ax.set_ylabel("mag")
 ax.set_zlabel("metallicity")
 
+print("3D isochrone plot done")
+
 
 # First attempt at generating a LF
 
@@ -99,8 +111,10 @@ metal_sup = np.max(MH)
 print(metal_inf, metal_sup)
 
 plt.figure()
-# Doing each type individually
+
+# This is the array in which we will build up our final histogram
 sampled_mags = []
+
 # Cutting the isochrone into constant metallicity slices
 for i, MHval in enumerate(sampled_metallicities):
     nearestMH = find_nearest(MH, MHval)
@@ -119,7 +133,7 @@ for i, MHval in enumerate(sampled_metallicities):
     # Puts these all together in a big array
     data = np.column_stack((mass_i, mags_i, types_i))
 
-    # Isolating the different types
+    # Isolating the different types (Not used currently)
     redgiants = data[data[:,2] == 1] 
     RC = data[data[:,2] == 2] 
     asymp = data[data[:,2] == 3] 
@@ -155,17 +169,34 @@ for i, MHval in enumerate(sampled_metallicities):
         plt.gca().invert_yaxis()
 
 sampled_mags = np.array(sampled_mags)
-# Building up a 2D array to plot histograms outside the loop
-
-
-
 
 plt.figure()
 
-# Plotting the histograms on top of each other
-bins_seq = np.linspace(-10, 10, 100)
+# Plotting the LF histogram
+final_bins = 300
+bins_seq = np.linspace(-3.5, 1.0, final_bins)
 plt.hist(sampled_mags, bins_seq, density=True, histtype='step')
+counts,bin_edges = np.histogram(sampled_mags, bins_seq, density=True)
+
+bin_centres = (bin_edges[:-1] + bin_edges[1:])/2.
+err = np.random.rand(bin_centres.size)*100
+
+plt.title("LF Histogram")
 plt.xlabel("Magnitude")
 plt.ylabel("Density")
 
+plt.figure()
+plt.scatter(bin_centres, counts, marker="x", color="black")
+
+# # Creating a nice spline to see the pattern
+# xnew = np.linspace(bin_centres.min(), bin_centres.max(), 1000) 
+# spl = make_interp_spline(bin_centres, counts, k=3)  # type: BSpline
+# power_smooth = spl(xnew)
+# plt.plot(xnew, power_smooth)
+
+plt.title("LF Scatter")
+plt.xlabel("Magnitude")
+plt.ylabel("Density")
+
+print("LF attempt Done")
 plt.show()
