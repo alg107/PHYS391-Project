@@ -70,6 +70,7 @@ print("Metallicity Done")
 
 # Sampling masses from lognormal IMF
 sampled_IMF = IMF.IMF_sample(N)
+np.save("sampledIMF_N"+str(N), np.array(sampled_IMF))
 
 plt.figure()
 plt.title("IMF Distribution")
@@ -169,6 +170,7 @@ for i, MHval in enumerate(sampled_metallicities):
         plt.gca().invert_yaxis()
 
 sampled_mags = np.array(sampled_mags)
+np.save("sampledmagsN"+str(N), sampled_mags)
 
 plt.figure()
 
