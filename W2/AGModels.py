@@ -46,7 +46,7 @@ def plot_model(data, fn, params):
     ts= np.array(data[:,0])
     ys = np.array(data[:,1])
     t_arr = np.linspace(np.min(ts), np.max(ts), RES)
-    plt.plot(t_arr, fn(params, t_arr))
+    plt.plot(t_arr, fn(params, t_arr), color="orange")
 
 def plot_model_data(data, fn, params):
     ts= np.array(data[:,0])
