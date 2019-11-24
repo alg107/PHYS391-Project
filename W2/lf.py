@@ -10,7 +10,7 @@ import IMF
 bulge_age = 10 #Gyr
 
 # The number of samples of metallicity and IMF
-N = int(5e6)
+N = int(4e6)
 
 # Finds nearest value in an array
 def find_nearest(array, value):

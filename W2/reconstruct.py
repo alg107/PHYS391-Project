@@ -7,6 +7,7 @@ import AGModels
 
 def reconstruct_LF(fname, bins):
     samples = np.load(fname)
+    #samples = np.concatenate((samples, np.load("Samples/Magnitudes/sampledmagsN4000000.npy")))
     plt.figure()
     matplotlib.rcParams['mathtext.fontset'] = 'stix'
     matplotlib.rcParams['font.family'] = 'STIXGeneral'
@@ -44,7 +45,7 @@ def reconstruct_LF(fname, bins):
 
 
 if __name__ == "__main__":
-    bcs, counts = reconstruct_LF("Samples/Magnitudes/sampledmagsN6000000.npy", 200)
+    bcs, counts = reconstruct_LF("Samples/Magnitudes/sampledmagsN10000000.npy", 200)
     plt.scatter(bcs, counts, marker="+", color="black", s=20, alpha=0.5)
     fitting.fit_data(bcs, counts)
     plt.show()
