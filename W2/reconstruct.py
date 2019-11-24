@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 import fitting
 import AGModels
 
@@ -7,22 +8,25 @@ import AGModels
 def reconstruct_LF(fname, bins):
     samples = np.load(fname)
     plt.figure()
+    matplotlib.rcParams['mathtext.fontset'] = 'stix'
+    matplotlib.rcParams['font.family'] = 'STIXGeneral'
 
     # Plotting the LF histogram
     final_bins = bins
     bins_seq = np.linspace(-3.5, 1.0, final_bins)
     plt.hist(samples, bins_seq, density=True, histtype='step')
     counts,bin_edges = np.histogram(samples, bins_seq, density=True)
+    plt.ylim(0.0, 1.0)
+    plt.xlim(-3.5, 1.0)
 
     bin_centres = (bin_edges[:-1] + bin_edges[1:])/2.
     err = np.random.rand(bin_centres.size)*100
 
-    plt.title("LF Histogram")
-    plt.xlabel("Magnitude")
-    plt.ylabel("Density")
+    plt.xlabel("$M_{K_s}$")
+    plt.ylabel("Luminosity Function (Arbitrary Units)")
 
     plt.figure()
-    plt.scatter(bin_centres, counts, marker="x", color="black")
+    #plt.scatter(bin_centres, counts, marker="x", color="blue")
 
     # # Creating a nice spline to see the pattern
     # xnew = np.linspace(bin_centres.min(), bin_centres.max(), 1000) 
@@ -30,9 +34,8 @@ def reconstruct_LF(fname, bins):
     # power_smooth = spl(xnew)
     # plt.plot(xnew, power_smooth)
 
-    plt.title("LF Scatter")
-    plt.xlabel("Magnitude")
-    plt.ylabel("Density")
+    plt.xlabel("$M_{K_s}$")
+    plt.ylabel("Luminosity Function (Arbitrary Units)")
 
 
 
@@ -41,6 +44,7 @@ def reconstruct_LF(fname, bins):
 
 
 if __name__ == "__main__":
-    bcs, counts = reconstruct_LF("Samples/Magnitudes/sampledmagsN1000000.npy", 200)
+    bcs, counts = reconstruct_LF("Samples/Magnitudes/sampledmagsN6000000.npy", 200)
+    plt.scatter(bcs, counts, marker="+", color="black", s=20, alpha=0.5)
     fitting.fit_data(bcs, counts)
     plt.show()
