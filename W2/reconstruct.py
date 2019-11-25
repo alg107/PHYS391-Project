@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import fitting
 import AGModels
+from scipy.stats import norm
 
 
 def reconstruct_LF(fname, bins):
@@ -46,6 +47,14 @@ def reconstruct_LF(fname, bins):
 
 if __name__ == "__main__":
     bcs, counts = reconstruct_LF("Samples/Magnitudes/sampledmagsN10000000.npy", 200)
+    print("Gaussian Fit\n")
     plt.scatter(bcs, counts, marker="+", color="black", s=20, alpha=0.5)
     fitting.fit_data(bcs, counts)
+    plt.figure()
+    plt.xlabel("$M_{K_s}$")
+    plt.ylabel("Luminosity Function (Arbitrary Units)")
+    plt.scatter(bcs, counts, marker="+", color="black", s=20, alpha=0.5)
+    print("\nSkew Fit\n")
+    fitting.fit_data_skew(bcs, counts)
+    print("Disregard uncertainties for now.")
     plt.show()
