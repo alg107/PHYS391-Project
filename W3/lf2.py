@@ -35,6 +35,12 @@ def find_nearest(array, value):
 def chabrier(m):
     return (0.158/(np.log(10)*m))*np.exp(-((np.log10(m)-np.log10(0.079))**2/(2*0.69**2)))
 
+def norm(x, m, s):
+    return (1/np.sqrt(2*np.pi*s**2))*np.exp(-((x-m)**2/(2*s**2)))
+
+def MDF(z):
+    return norm(z, 0.0, 0.4)
+
 # 3: Isochrones
 
 #MM = np.column_stack((sampled_metallicities, sampled_IMF))
@@ -104,6 +110,10 @@ def phi(M, z, typ):
     # Need to account for multiple solutions maybe
     m, deriv = thetainv(M, z, typ)
     return chabrier(m)*np.abs(deriv)
+
+def Phi(M, typ):
+    # integrate phi*MDF somehow
+    pass
 
 
 plt.show()
