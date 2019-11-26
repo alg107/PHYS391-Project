@@ -81,11 +81,19 @@ plt.figure()
 # Cutting the isochrone into constant metallicity slices
 data = np.column_stack((Kmag, masses, [int(classify_stage(x)) for x in types], MH))
 
+def sort_pnts(pnts):
+    return np.array(sorted(pnts, key=lambda x: x[0]))
+
 def thetainv(M, z, typ):
     nearestz = find_nearest(data[:,3], z)
     # Take slice corresponding to closest metallicity and chosen type
     pnts = data[data[:,3]==nearestz]
     pnts = pnts[pnts[:,2]==typ]
+    try:
+        pnts = np.split(pnts, np.argmax(pnts[:,0]))
+        print("worked")
+    except:
+        pnts = [pnts]
 
     #pnts = delete_duplicates(pnts)
     #pnts = np.array(sorted(pnts, key=lambda x: x[0]))
@@ -98,7 +106,8 @@ def thetainv(M, z, typ):
     #splder = spl.derivative()
     plt.xlabel("Magnitude")
     plt.ylabel("Mass")
-    for row in pnts:
+    plt.xlim(-3.5, 1.0)
+    for row in pnts[0]:
         plt.scatter(row[0], row[1], color=colour_from_type(row[2]))
     #return m, deriv
 
