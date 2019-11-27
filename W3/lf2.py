@@ -105,9 +105,10 @@ def thetainv(M, z, typ, show_plt):
             sec3 = sec23[sec23[:,1]<minval]
         pnts = [sec1,sec2, sec3]
         pnts = [i for i in pnts if len(i)!=0]
+    elif typ == 1:
+        pnts = [pnts]
     else:
-        #pnts = [pnts]
-        pnts = [pnts[pnts[:,0]<0.0]]
+        pnts = [pnts[pnts[:,0] < -2.5]]
 
     #pnts = delete_duplicates(pnts)
     #pnts = np.array(sorted(pnts, key=lambda x: x[0]))
