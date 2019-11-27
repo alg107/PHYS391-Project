@@ -45,10 +45,15 @@ def MDF(z):
 def jiggle_pnts(pnts):
     return np.array([np.random.random()*0.00000001+i for i in pnts])
 
+def smooth(y, box_pts):
+    box = np.ones(box_pts)/box_pts
+    y_smooth = np.convolve(y, box, mode='same')
+    return y_smooth
+
 
 
 # Taking the useful stuff from the isochrone table
-iso_table = np.loadtxt("iso.db")
+iso_table = np.loadtxt("iso2.db")
 MH = iso_table[:,1]
 masses = iso_table[:,3]
 Kmag = iso_table[:,32]
@@ -80,7 +85,8 @@ def delete_duplicates(pnts):
 
 
 # Cutting the isochrone into constant metallicity slices
-data = np.column_stack((jiggle_pnts(Kmag), masses, [int(classify_stage(x)) for x in types], MH))
+data = np.column_stack((jiggle_pnts(masses), Kmag, [int(classify_stage(x)) for x in types], MH))
+data = data[data[:,1]<10.0]
 
 def sort_pnts(pnts):
     return np.array(sorted(pnts, key=lambda x: x[0]))
@@ -92,57 +98,34 @@ def thetainv(M, z, typ, show_plt):
     pnts = data[data[:,3]==nearestz]
     pnts = pnts[pnts[:,2]==typ]
     pnts = sort_pnts(pnts)
-    if typ == 2:
-        # Get all the twists and turns
-        pnts = pnts[pnts[:,0]<0.0]
-        maxval = pnts[:,1][np.argmax(pnts[:,0])]
-        sec1 = pnts[pnts[:,1]>=maxval]
-        sec23 = pnts[pnts[:,1]<maxval]
-        sec2 = sec3 = []
-        if len(sec23) != 0:
-            minval = sec23[:,1][np.argmin(sec23[:,0])]
-            sec2 = sec23[sec23[:,1]>=minval]
-            sec3 = sec23[sec23[:,1]<minval]
-        pnts = [sec1,sec2, sec3]
-        pnts = [i for i in pnts if len(i)!=0]
-    else:
-        #pnts = [pnts]
-        pnts = [pnts[pnts[:,0]<0.0]]
-
-    #pnts = delete_duplicates(pnts)
-    #pnts = np.array(sorted(pnts, key=lambda x: x[0]))
-    #print(pnts[:,0])
 
     # Using a linear spline to connect fixed points
     ms = []
     derivs = []
-    for sec in pnts:
-        #x = np.linspace(np.min(sec[:,0]),np.max(sec[:,0]),100000)
-        if len(sec)==0: 
-            print("0")
-            continue
-        spl = UnivariateSpline(sec[:,0], sec[:,1], s=0, k=1)
-        dv = spl.derivative()
-        if show_plt:
-            x = np.linspace(np.min(sec[:,0]),np.max(sec[:,0]),100000)
-            for row in sec:
-                plt.scatter(row[0], row[1], color=colour_from_type(row[2]))
-            plt.plot(x, spl(x))
-            #plt.xlim(0.95, 0.958)
-            plt.xlabel("Magnitude")
-            plt.ylabel("Mass")
+    spl = UnivariateSpline(pnts[:,0], pnts[:,1]-M, s=0, k=3)
+    ms = spl.roots()
+    dv = spl.derivative()
+    derivs = [dv(i) for i in ms]
+    if False:
+        x = np.linspace(np.min(pnts[:,0]),np.max(pnts[:,0]),100000)
+        for row in pnts:
+            plt.scatter(row[0], row[1], color=colour_from_type(row[2]))
+        plt.plot(x, spl(x))
+        #plt.xlim(0.95, 0.958)
+        plt.xlabel("Mass")
+        plt.ylabel("Magnitude")
 
-        ms.append(spl(M))
-        derivs.append(dv(M))
     return ms, derivs
 
 plt.figure()
+print(np.min(data[:,3]),np.max(data[:,3]))
 test_zs = np.linspace(np.min(data[:,3]), np.max(data[:,3]), 5)
-for test_z in test_zs:
-    plt.figure()
-    thetainv(1, test_z, 1, True)
-    thetainv(1, test_z, 2, True)
-    thetainv(1, test_z, 3, True)
+#for test_z in test_zs:
+#    plt.figure()
+#    plt.gca().invert_yaxis()
+#    thetainv(1, test_z, 1, True)
+#    thetainv(1, test_z, 2, True)
+#    thetainv(1, test_z, 3, True)
 
 
 def phi(M, z, typ):
@@ -177,9 +160,11 @@ for i in [1,2,3]:
     sigma = 0.05
     gaussian = np.exp(-(x/sigma)**2/2)
     smoothed = np.convolve(ys, gaussian, mode="same")
+    smoothedv2 = smooth(ys, 40)
     #print(len(ys), len(gaussian), len(smoothed))
     #print(ys)
     plt.plot(x, ys)
+    #plt.plot(x, smoothedv2)
     #plt.plot(x, smoothed)
 
 plt.show()
