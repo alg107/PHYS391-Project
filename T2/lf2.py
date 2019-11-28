@@ -181,6 +181,8 @@ for i in [1,2,3]:
     #print(len(ys), len(gaussian), len(smoothed))
     #print(ys)
     plt.plot(x, ys)
+    plt.xlabel("Magnitude")
+    plt.ylabel("Luminosity Function (Arbitrary Units)")
     #plt.plot(x, smoothed)
 
 plt.show()
