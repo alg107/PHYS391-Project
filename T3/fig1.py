@@ -35,6 +35,50 @@ vvv['K_bin'] = pd.cut(vvv['KCORR'], 80)
 vvv['L_bin'] = pd.cut(vvv['L'], 100)
 vvv['B_bin'] = pd.cut(vvv['B'], 75)
 
-### Section ONE: Middle
+# Gets the different bin values and sorts them
+# to be iterated over
+#K_bins = vvv.K_bin.unique()
+L_bins = np.sort(vvv.L_bin.unique())
+B_bins = np.sort(vvv.B_bin.unique())
 
+### Section TWO: Middle
 
+# Creates the array where the displayed values will
+# be stored
+middle_map = np.zeros((len(L_bins), len(B_bins)))
+
+for i, Lbin in enumerate(L_bins):
+    for j, Bbin in enumerate(B_bins):
+        binned_vals = vvv[vvv['L_bin']==Lbin][vvv['B_bin']==Bbin]
+        bin_mean = binned_vals['EJK'].mean()
+        middle_map[i,j] = bin_mean
+
+# Display this array
+plt.figure()
+plt.imshow(middle_map, cmap='gnuplot')
+plt.colorbar()
+# Needs axes
+
+# Masking...
+
+### Section THREE: Right
+
+# Creates the array where the displayed values will
+# be stored
+right_map = np.zeros((len(L_bins), len(B_bins)))
+
+for i, Lbin in enumerate(L_bins):
+    for j, Bbin in enumerate(B_bins):
+        binned_vals = vvv[vvv['L_bin']==Lbin][vvv['B_bin']==Bbin]
+        bin_mean = binned_vals['KCOMBERR'].mean()
+        right_map[i,j] = bin_mean
+
+# Display this array
+plt.figure()
+plt.imshow(right_map, cmap='gnuplot')
+plt.colorbar()
+# Needs axes
+
+# Masking...
+
+### Section FOUR: Left
