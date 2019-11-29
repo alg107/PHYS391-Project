@@ -94,15 +94,15 @@ def present_middle_right(middle_map, right_map, L_bins, B_bins):
     plt.imshow(middle_map, cmap='gnuplot', origin='lower', extent=extent)
     plt.colorbar(orientation="horizontal", label="$E(J-K_s)(mag)$")
     plt.contour(middle_map, [0.9], colors="white", extent=extent)
-    plt.xlabel("$l(°)$")
-    plt.ylabel("$b(°)$")
+    plt.xlabel("$l(^{\circ})$")
+    plt.ylabel("$b(^{\circ})$")
     # Needs axes
     plt.figure()
     plt.imshow(right_map, cmap='gnuplot', origin='lower', extent=extent)
     plt.colorbar(orientation="horizontal", label="$\langle \sigma_{K_s} \\rangle (mag)$")
     plt.contour(right_map, [0.06], colors="white", extent=extent)
-    plt.xlabel("$l(°)$")
-    plt.ylabel("$b(°)$")
+    plt.xlabel("$l(^{\circ})$")
+    plt.ylabel("$b(^{\circ})$")
     # Needs axes
     print("plotted both plots")
 
