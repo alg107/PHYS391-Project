@@ -16,11 +16,8 @@ rc('text', usetex=True)
 ## Involves cutting some bits out and then binning data in this form:
 ## (K, l, b): (80, 100, 75), 11 < K < 15, -10 < l < 10, -10 < b < 5
 
-def crunch_middle_right(fname):
 
-    vvv = pd.read_csv(fname)
-    print("read data")
-
+def crunch_steps(vvv):
 
     # Select 11 < K_s < 15
     vvv = vvv[vvv["KCOR"].between(11.0,15.0)]
@@ -63,26 +60,37 @@ def crunch_middle_right(fname):
     # be stored
     middle_map = np.zeros((len(L_bins), len(B_bins)))
     right_map = np.zeros((len(L_bins), len(B_bins)))
+    middle_count = np.zeros((len(L_bins), len(B_bins)))
+    right_count = np.zeros((len(L_bins), len(B_bins)))
 
     for i, Lbin in enumerate(L_bins):
         for j, Bbin in enumerate(B_bins):
             binned_vals = vvv[vvv['L_bin']==Lbin][vvv['B_bin']==Bbin]
             bin_mean = binned_vals['EJK'].mean()
+            bin_total = binned_vals['EJK'].size
             middle_map[i,j] = bin_mean
+            middle_map[i,j] = bin_total
             bin_mean2 = binned_vals['KCOMBERR'].mean()
+            bin_total2 = binned_vals['KCOMBERR'].size
             right_map[i,j] = bin_mean2
+            right_map[i,j] = bin_total2
 
     print("Built plot arrays")
 
+
+    print("Saved plot arrays")
+
+    return middle_map, right_map, middle_count, right_count, L_bins, B_bins
+
+def crunch_middle_right(fname):
+    vvv = pd.read_csv(fname)
+    print("read data")
+    middle_map, right_map, middle_count, right_count, L_bins, B_bins = crunch_steps(vvv)
     np.save("middle_map", middle_map)
     np.save("right_map", right_map)
     np.save("L_bins", L_bins)
     np.save("B_bins", B_bins)
-
-    print("Saved plot arrays")
-
     return middle_map, right_map, L_bins, B_bins
-
 
 def present_middle_right(middle_map, right_map, L_bins, B_bins):
     # Getting dimensions
@@ -114,9 +122,35 @@ def present_middle_right(middle_map, right_map, L_bins, B_bins):
 def load_saved_maps():
     return np.load("middle_map.npy"), np.load("right_map.npy"), np.load("L_bins.npy", allow_pickle=True), np.load("B_bins.npy", allow_pickle=True)
 
+def process_chunks(fname):
+    middle_map = np.zeros((100, 75))
+    right_map = np.zeros((100, 75))
+    middle_count = np.zeros((100, 75))
+    right_count = np.zeros((100, 75))
+    L_bins = np.array([])
+    B_bins = np.array([])
+    
+    for chunk in pd.read_csv(fname, chunksize=10**5):
+
+        middle_mapT, right_mapT, middle_countT, right_countT, L_binsT, B_binsT = crunch_steps(chunk)
+        middle_map = (np.multiply(middle_count,middle_map) + np.multiply(middle_countT,middle_mapT))/(middle_count+middle_countT)
+        right_map = (np.multiply(right_count,right_map) + np.multiply(right_countT,right_mapT))/(right_count+right_countT)
+        middle_count = middle_count+middle_countT
+        right_count = right_count+right_countT
+        L_bins = np.unique(np.concatenate((L_bins, L_binsT)))
+        B_bins = np.unique(np.concatenate((B_bins, B_binsT)))
+
+
+    np.save("middle_map", middle_map)
+    np.save("right_map", right_map)
+    np.save("L_bins", L_bins)
+    np.save("B_bins", B_bins)
+    return middle_map, right_map, L_bins, B_bins
+
 if __name__=="__main__":
     #middle_map, right_map, L_bins, B_bins = crunch_middle_right("testvvv2.db")
-    middle_map, right_map, L_bins, B_bins = load_saved_maps()
+    #middle_map, right_map, L_bins, B_bins = load_saved_maps()
+    middle_map, right_map, L_bins, B_bins = process_chunks("testvvv2.db")
     present_middle_right(middle_map, right_map, L_bins, B_bins)
 
 ### Section FOUR: Left
