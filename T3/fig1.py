@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib import rc
+import dask.dataframe as dd
 
 
 """
@@ -44,11 +45,11 @@ def crunch_middle_right(fname):
 
     # Next use pd.cut to bin data
 
-    vvv['K_bin'] = pd.cut(vvv['KCOR'], 80)
+    vvv['K_bin'] = pd.cut(vvv['KCOR'], np.linspace(11.0, 15.0, 80))
     print("Cut K")
-    vvv['L_bin'] = pd.cut(vvv['L'], 100)
+    vvv['L_bin'] = pd.cut(vvv['L'], np.linspace(-10.0, 10.0, 100))
     print("Cut L")
-    vvv['B_bin'] = pd.cut(vvv['B'], 75)
+    vvv['B_bin'] = pd.cut(vvv['B'], np.linspace(-10.0, 5.0, 75))
     print("Cut B")
 
     # Gets the different bin values and sorts them
@@ -115,8 +116,8 @@ def load_saved_maps():
     return np.load("middle_map.npy"), np.load("right_map.npy"), np.load("L_bins.npy", allow_pickle=True), np.load("B_bins.npy", allow_pickle=True)
 
 if __name__=="__main__":
-    #middle_map, right_map, L_bins, B_bins = crunch_middle_right("testvvv2.db")
-    middle_map, right_map, L_bins, B_bins = load_saved_maps()
+    middle_map, right_map, L_bins, B_bins = crunch_middle_right("testvvv2.db")
+    #middle_map, right_map, L_bins, B_bins = load_saved_maps()
     present_middle_right(middle_map, right_map, L_bins, B_bins)
 
 ### Section FOUR: Left
