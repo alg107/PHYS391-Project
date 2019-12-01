@@ -11,6 +11,8 @@ and then the left image.
 """
 
 rc('text', usetex=True)
+
+# 10**6 chunks means 3 cycles for testvvv2.db and 101 cycles for vvv.db
 CHUNKS = 10**6
 L = 100
 B = 75
@@ -31,8 +33,8 @@ nan_to_zeroV = np.vectorize(nan_to_zero)
 def crunch_steps(vvv):
 
     # Select 11 < K_s < 15
-    #vvv = vvv[vvv["KCOR"].between(11.0,15.0)]
-    vvv = vvv[vvv["KCOR"].between(12.975,13.025)]
+    #vvv = vvv[vvv["KCOR"].between(11.0,15.0)] # For left figure
+    vvv = vvv[vvv["KCOR"].between(12.975,13.025)] # For right figure
     print("Trimmed K")
 
     # Select -10 < l < 10
@@ -48,7 +50,8 @@ def crunch_steps(vvv):
 
     # Cut out 0.4 < J - K_s < 1.0
     # This is to select mainly red giant stars
-    vvv = vvv[(vvv["JCOR"]-vvv["KCOR"]).between(0.4, 1.0, inclusive=False)]
+    # Uncomment below line later
+    #vvv = vvv[~((vvv["JCOR"]-vvv["KCOR"]).between(0.4, 1.0, inclusive=False))]
     print("Selected mainly Red Giant stars")
 
     # Next use pd.cut to bin data
@@ -82,11 +85,16 @@ def crunch_steps(vvv):
             bin_mean2 = 0
             bin_total2 = 0
             if not binned_vals.empty:
-                #binned_vals = vvv[vvv['L_bin']==Lbin][vvv['B_bin']==Bbin]
-                bin_mean = binned_vals['EJK'].mean()
-                bin_total = binned_vals['EJK'].size
-                bin_mean2 = binned_vals['KCOMBERR'].mean()
-                bin_total2 = binned_vals['KCOMBERR'].size
+                EJKs = binned_vals['EJK']
+                KCOMBERRs = binned_vals['KCOMBERR']
+                EJKs = EJKs[~np.isnan(EJKs)]
+                KCOMBERRs = KCOMBERRs[~np.isnan(KCOMBERRs)]
+                if not EJKs.empty:
+                    bin_mean = EJKs.mean()
+                    bin_total = len(EJKs)
+                if not KCOMBERRs.empty:
+                    bin_mean2 = KCOMBERRs.mean()
+                    bin_total2 = len(KCOMBERRs)
             middle_map[i,j] = bin_mean
             middle_count[i,j] = bin_total
             right_map[i,j] = bin_mean2
@@ -101,6 +109,7 @@ def crunch_steps(vvv):
     return middle_map, right_map, middle_count, right_count, L_bins, B_bins
 
 def crunch_middle_right(fname):
+    # For no-chunk processing
     vvv = pd.read_csv(fname)
     print("read data")
     middle_map, right_map, middle_count, right_count, L_bins, B_bins = crunch_steps(vvv)
@@ -111,37 +120,47 @@ def crunch_middle_right(fname):
     return middle_map, right_map, L_bins, B_bins
 
 def present_middle_right(middle_map, right_map, L_bins, B_bins):
+
     # Getting dimensions
     # left, right, bottom, top
     extent = [L_bins[0].left, L_bins[-1].right, B_bins[0].left, B_bins[-1].right]
 
-    middle_map = np.fliplr(middle_map.T)
-    right_map = np.fliplr(right_map.T)
+    # The plot has l and b on different axes than I initially chose
+    # so we just transpose the plot arrays
+    middle_map = middle_map.T
+    right_map = right_map.T
 
     # Display this array
     plt.figure()
-    plt.imshow(middle_map, cmap='gnuplot', origin='lower', extent=extent, vmin=0.0, vmax=3.0)
-    plt.colorbar(orientation="horizontal", label="$E(J-K_s)(mag)$")
+    plt.imshow(middle_map, cmap='gnuplot', origin='lower', extent=extent,
+            vmin=0.0, vmax=3.0)
+    plt.colorbar(orientation="horizontal",
+            label="$E(J-K_s)(mag)$")
     plt.contour(middle_map, [0.9], colors="white", extent=extent)
+    plt.gca().invert_xaxis()
     plt.xlabel("$l(^{\circ})$")
     plt.ylabel("$b(^{\circ})$")
-    # Needs axes
+
     plt.figure()
-    plt.imshow(right_map, cmap='gnuplot', origin='lower', extent=extent, vmin=0.0, vmax=0.18)
-    plt.colorbar(orientation="horizontal", label="$\langle \sigma_{K_s} \\rangle (mag)$")
+    plt.imshow(right_map, cmap='gnuplot', origin='lower', extent=extent,
+            vmin=0.0, vmax=0.18)
+    plt.colorbar(orientation="horizontal", 
+            label="$\langle \sigma_{K_s} \\rangle (mag)$")
     plt.contour(right_map, [0.06], colors="white", extent=extent)
+    plt.gca().invert_xaxis()
     plt.xlabel("$l(^{\circ})$")
     plt.ylabel("$b(^{\circ})$")
-    # Needs axes
+
     print("plotted both plots")
-
-
-    # Masking for both...
 
     plt.show()
 
 def load_saved_maps():
-    return np.load("middle_map.npy"), np.load("right_map.npy"), np.load("L_bins.npy", allow_pickle=True), np.load("B_bins.npy", allow_pickle=True)
+    return (np.load("middle_map.npy"),
+        np.load("right_map.npy"),
+        np.load("L_bins.npy", allow_pickle=True),
+        np.load("B_bins.npy", allow_pickle=True)
+    )
 
 def safe_divide(a, b):
     if b == 0 or np.isnan(b):
@@ -151,19 +170,12 @@ def safe_divide(a, b):
     else:
         return a/b
 
-def safe_multiply(a, b):
-    if a==0 or b==0:
-        return 0
-    elif np.isnan(a) or np.isnan(b):
-        return np.nan
-    else:
-        return a*b
 
-
+# div by 0
 safe_divideV = np.vectorize(safe_divide, otypes=[float])
-safe_multiplyV = np.vectorize(safe_multiply, otypes=[float])
 
 def process_chunks(fname):
+    # Instantiate the master plot arrays
     middle_map = np.zeros((L, B))
     right_map = np.zeros((L, B))
     middle_count = np.zeros((L, B))
@@ -175,19 +187,30 @@ def process_chunks(fname):
     
     for chunk in pd.read_csv(fname, chunksize=CHUNKS):
 
+        # Generate the plot arrays for a chunk
         middle_mapT, right_mapT, middle_countT, right_countT, L_binsT, B_binsT = crunch_steps(chunk)
-        middle_map = safe_divideV((safe_multiplyV(middle_count,middle_map) + safe_multiplyV(middle_countT,middle_mapT)), (middle_count+middle_countT))
-        right_map = safe_divideV((safe_multiplyV(right_count,right_map) + safe_multiplyV(right_countT,right_mapT)), (right_count+right_countT))
+
+        # Combine these with the previous chunks using a weighted average
+        middle_map = safe_divideV(((middle_count*middle_map)
+            + (middle_countT*middle_mapT)), 
+            ((middle_count+middle_countT)))
+        right_map = safe_divideV(((right_count*right_map) 
+            + (right_countT*right_mapT)),
+            ((right_count+right_countT)))
+
+        # Update the total counts
         middle_count = middle_count+middle_countT
         right_count = right_count+right_countT
-        #L_bins = np.unique(np.concatenate((L_bins, L_binsT)))
-        #B_bins = np.unique(np.concatenate((B_bins, B_binsT)))
+
         L_bins = L_binsT
         B_bins = B_binsT
+
+        # A counter to keep track of progress
         print(counter)
         counter+=1
 
 
+    # Save the generated arrays
     np.save("middle_map", middle_map)
     np.save("right_map", right_map)
     np.save("L_bins", L_bins)
@@ -196,8 +219,9 @@ def process_chunks(fname):
 
 if __name__=="__main__":
     #middle_map, right_map, L_bins, B_bins = crunch_middle_right("testvvv2.db")
-    middle_map, right_map, L_bins, B_bins = load_saved_maps()
-    #middle_map, right_map, L_bins, B_bins = process_chunks("/users/alex/data/vvv.db")
+    #middle_map, right_map, L_bins, B_bins = load_saved_maps()
+    #middle_map, right_map, L_bins, B_bins = process_chunks("/users/alex/Data/vvv.db")
+    middle_map, right_map, L_bins, B_bins = process_chunks("testvvv2.db")
     present_middle_right(middle_map, right_map, L_bins, B_bins)
 
 ### Section FOUR: Left
@@ -219,8 +243,7 @@ if __name__=="__main__":
 
 # # Cut out 0.4 < J - K_s < 1.0
 # # This is to select mainly red giant stars
-# vvv = vvv[(vvv["JCORR"]-vvv["KCOR"]) < 0.4]
-# vvv = vvv[(vvv["JCORR"]-vvv["KCOR"]) > 1.0]
+# [Not done]
 
 # # Next use pd.cut to bin data
 
