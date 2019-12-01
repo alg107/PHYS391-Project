@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib import rc
+from display import *
+from helpers import *
 
 
 """
@@ -21,13 +23,6 @@ B = 75
 ## Involves cutting some bits out and then binning data in this form:
 ## (K, l, b): (80, 100, 75), 11 < K < 15, -10 < l < 10, -10 < b < 5
 
-def nan_to_zero(x):
-    if np.isnan(x):
-        return 0
-    else:
-        return x
-
-nan_to_zeroV = np.vectorize(nan_to_zero)
 
 
 def crunch_steps(vvv):
@@ -56,14 +51,12 @@ def crunch_steps(vvv):
 
     # Next use pd.cut to bin data
 
-    #vvv['K_bin'], K_bins = pd.cut(vvv['KCOR'], pd.interval_range(start=11.0, end=15.0, periods=80), retbins=True)
-    #print("Cut K")
-    vvv['L_bin'], L_bins = pd.cut(vvv['L'], pd.interval_range(start=-10.0, end=10.0, periods=L), retbins=True)
+    vvv['L_bin'], L_bins = pd.cut(vvv['L'],
+            pd.interval_range(start=-10.0, end=10.0, periods=L), retbins=True)
     print("Cut L")
-    vvv['B_bin'], B_bins = pd.cut(vvv['B'], pd.interval_range(start=-10.0, end=5.0, periods=B), retbins=True)
+    vvv['B_bin'], B_bins = pd.cut(vvv['B'],
+            pd.interval_range(start=-10.0, end=5.0, periods=B), retbins=True)
     print("Cut B")
-
-
 
     # Gets the different bin values and sorts them
     # to be iterated over
@@ -119,60 +112,7 @@ def crunch_middle_right(fname):
     np.save("B_bins", B_bins)
     return middle_map, right_map, L_bins, B_bins
 
-def present_middle_right(middle_map, right_map, L_bins, B_bins):
 
-    # Getting dimensions
-    # left, right, bottom, top
-    extent = [L_bins[0].left, L_bins[-1].right, B_bins[0].left, B_bins[-1].right]
-
-    # The plot has l and b on different axes than I initially chose
-    # so we just transpose the plot arrays
-    middle_map = middle_map.T
-    right_map = right_map.T
-
-    # Display this array
-    plt.figure()
-    plt.imshow(middle_map, cmap='gnuplot', origin='lower', extent=extent,
-            vmin=0.0, vmax=3.0)
-    plt.colorbar(orientation="horizontal",
-            label="$E(J-K_s)(mag)$")
-    plt.contour(middle_map, [0.9], colors="white", extent=extent)
-    plt.gca().invert_xaxis()
-    plt.xlabel("$l(^{\circ})$")
-    plt.ylabel("$b(^{\circ})$")
-
-    plt.figure()
-    plt.imshow(right_map, cmap='gnuplot', origin='lower', extent=extent,
-            vmin=0.0, vmax=0.18)
-    plt.colorbar(orientation="horizontal", 
-            label="$\langle \sigma_{K_s} \\rangle (mag)$")
-    plt.contour(right_map, [0.06], colors="white", extent=extent)
-    plt.gca().invert_xaxis()
-    plt.xlabel("$l(^{\circ})$")
-    plt.ylabel("$b(^{\circ})$")
-
-    print("plotted both plots")
-
-    plt.show()
-
-def load_saved_maps():
-    return (np.load("middle_map.npy"),
-        np.load("right_map.npy"),
-        np.load("L_bins.npy", allow_pickle=True),
-        np.load("B_bins.npy", allow_pickle=True)
-    )
-
-def safe_divide(a, b):
-    if b == 0 or np.isnan(b):
-        return 0
-    elif np.isnan(a):
-        return np.nan
-    else:
-        return a/b
-
-
-# div by 0
-safe_divideV = np.vectorize(safe_divide, otypes=[float])
 
 def process_chunks(fname):
     # Instantiate the master plot arrays
@@ -188,7 +128,8 @@ def process_chunks(fname):
     for chunk in pd.read_csv(fname, chunksize=CHUNKS):
 
         # Generate the plot arrays for a chunk
-        middle_mapT, right_mapT, middle_countT, right_countT, L_binsT, B_binsT = crunch_steps(chunk)
+        res = crunch_steps(chunk)
+        middle_mapT, right_mapT, middle_countT, right_countT, L_binsT, B_binsT = res
 
         # Combine these with the previous chunks using a weighted average
         middle_map = safe_divideV(((middle_count*middle_map)
@@ -219,7 +160,6 @@ def process_chunks(fname):
 
 if __name__=="__main__":
     #middle_map, right_map, L_bins, B_bins = crunch_middle_right("testvvv2.db")
-    #middle_map, right_map, L_bins, B_bins = load_saved_maps()
     #middle_map, right_map, L_bins, B_bins = process_chunks("/users/alex/Data/vvv.db")
     middle_map, right_map, L_bins, B_bins = process_chunks("testvvv2.db")
     present_middle_right(middle_map, right_map, L_bins, B_bins)
