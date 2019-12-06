@@ -197,7 +197,7 @@ def phi(M, z, typ):
         phi_c += toadd
     return phi_c
 
-RES = 10000
+RES = 1000
 x = np.linspace(-3.5, 1.0, RES)
 
 #plt.figure()
@@ -223,7 +223,7 @@ for i in pb([1, 2, 3], redirect_stdout=True):
     ys = np.array([Phi(M, i) for M in x])
     ysT.append(ys)
     #if i!=2: ys *=0.5
-    sigma = 0.05 
+    sigma = 20 
     gaussian = np.exp(-(x/sigma)**2/2)
     kernel = Gaussian1DKernel(stddev=sigma)
     #smoothed = np.convolve(ys, gaussian, mode="same")
