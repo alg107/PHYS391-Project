@@ -1,10 +1,11 @@
 import numpy as np 
 
 def load_saved_maps():
-    return (np.load("middle_map.npy"),
-        np.load("right_map.npy"),
-        np.load("L_bins.npy", allow_pickle=True),
-        np.load("B_bins.npy", allow_pickle=True)
+    return (np.load("Cache/middle_map.npy"),
+        np.load("Cache/right_map.npy"),
+        np.load("Cache/left_map.npy"),
+        np.load("Cache/L_bins.npy", allow_pickle=True),
+        np.load("Cache/B_bins.npy", allow_pickle=True)
     )
 
 def nan_to_zero(x):

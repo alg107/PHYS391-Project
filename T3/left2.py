@@ -5,6 +5,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib import rc
 from display import *
 from helpers import *
+from matplotlib import colors
 
 
 """
@@ -16,8 +17,8 @@ rc('text', usetex=True)
 
 # 10**6 chunks means 3 cycles for testvvv2.db and 101 cycles for vvv.db
 CHUNKS = 10**6
-L = 100
-B = 75
+L = 14
+B = 14
 
 ## Section ONE: Preparing VVV data
 ## Involves cutting some bits out and then binning data in this form:
@@ -25,12 +26,10 @@ B = 75
 
 
 
-def crunch_steps(vvv, prop):
+def crunch_steps(vvv):
 
     # Select 11 < K_s < 15
     #vvv = vvv[vvv["KCOR"].between(11.0,15.0)] # For left figure
-    vvv = vvv[vvv["KCOR"].between(12.975,13.025)] # For right figure
-    print("Trimmed K")
 
     # Select -10 < l < 10
     vvv = vvv[vvv["L"].between(-10.0, 10.0)]
@@ -50,6 +49,7 @@ def crunch_steps(vvv, prop):
     print("Selected mainly Red Giant stars")
 
     # Next use pd.cut to bin data
+
     vvv['L_bin'], L_bins = pd.cut(vvv['L'],
             pd.interval_range(start=-10.0, end=10.0, periods=L), retbins=True)
     print("Cut L")
@@ -57,95 +57,49 @@ def crunch_steps(vvv, prop):
             pd.interval_range(start=-10.0, end=5.0, periods=B), retbins=True)
     print("Cut B")
 
+    # Gets the different bin values and sorts them
+    # to be iterated over
+    #K_bins = vvv.K_bin.unique()
+
     ### Section TWO: Middle & Right
 
     # Creates the array where the displayed values will
     # be stored
-    disp_map = np.zeros((L, B))
-    disp_count = np.zeros((L, B))
+    left_map = np.zeros((L, B))
 
-    for i,(_, narrowed) in enumerate(vvv.groupby('L_bin')):
-        for j, (_, binned_vals) in enumerate(narrowed.groupby('B_bin')):
-            #binned_vals = binned_vals.dropna()
-            bin_mean = 0
-            bin_total = 0
-            bin_mean2 = 0
-            bin_total2 = 0
+    for i,(b1, narrowed) in enumerate(vvv.groupby('L_bin')):
+        print("B1:", b1)
+        for j, (b2, binned_vals) in enumerate(narrowed.groupby('B_bin')):
+            print("B2:", b2)
+            bin_median = 0
             if not binned_vals.empty:
-                PROPs = binned_vals[prop]
-                PROPs = PROPs[~np.isnan(PROPs)]
-                if not PROPs.empty:
-                    bin_mean = PROPs.mean()
-                    bin_total = len(PROPs)
-            disp_map[i,j] = bin_mean
-            disp_count[i,j] = bin_total
+                KDELs = binned_vals['KDEL']
+                if not KDELs.empty:
+                    bin_median = KDELs.median()
+            left_map[i,j] = bin_median
 
-    print("Built plot array")
+    print("Built plot arrays")
 
+    return left_map, L_bins, B_bins
 
-    #middle_map = nan_to_zeroV(middle_map)
-    #right_map = nan_to_zeroV(right_map)
-
-    return disp_map, disp_count, L_bins, B_bins
-
-# Do not use this function without modifying it
-# def crunch_middle_right(fname):
-    # # For no-chunk processing
-    # vvv = pd.read_csv(fname)
-    # print("read data")
-    # middle_map, right_map, middle_count, right_count, L_bins, B_bins = crunch_steps(vvv)
-    # np.save("middle_map", middle_map)
-    # np.save("right_map", right_map)
-    # np.save("L_bins", L_bins)
-    # np.save("B_bins", B_bins)
-    # return middle_map, right_map, L_bins, B_bins
+def crunch_middle_right(fname):
+    # For no-chunk processing
+    vvv = pd.read_csv(fname, usecols=["KDEL", "L", "B"])
+    print("read data")
+    left_map, L_bins, B_bins = crunch_steps(vvv)
+    np.save("left_map", left_map)
+    np.save("L_bins", L_bins)
+    np.save("B_bins", B_bins)
+    return left_map, L_bins, B_bins
 
 
 
-def process_chunks_mean(fname, prop, map_name):
-    # Instantiate the master plot arrays
-    disp_map = np.zeros((L, B))
-    disp_count = np.zeros((L, B))
-    L_bins = np.array([])
-    B_bins = np.array([])
-
-    counter = 1
-    
-    for chunk in pd.read_csv(fname, chunksize=CHUNKS):
-
-        # Generate the plot arrays for a chunk
-        res = crunch_steps(chunk, prop)
-        disp_mapT, disp_countT, L_binsT, B_binsT = res
-
-        # Combine these with the previous chunks using a weighted average
-        disp_map = safe_divideV(((disp_count*disp_map)
-            + (disp_countT*disp_mapT)), 
-            ((disp_count+disp_countT)))
-
-        # Update the total counts
-        disp_count = disp_count+disp_countT
-
-        L_bins = L_binsT
-        B_bins = B_binsT
-
-        # A counter to keep track of progress
-        print(counter)
-        counter+=1
-
-
-    # Save the generated arrays
-    np.save("Cache/"+map_name, disp_map)
-    np.save("Cache/L_bins", L_bins)
-    np.save("Cache/B_bins", B_bins)
-    return disp_map, L_bins, B_bins
 
 if __name__=="__main__":
-    # datafile = "testvvv2.db"
-    datafile = "/users/alex/Data/vvv.db"
     #middle_map, right_map, L_bins, B_bins = crunch_middle_right("testvvv2.db")
     #middle_map, right_map, L_bins, B_bins = process_chunks("/users/alex/Data/vvv.db")
-    #middle_map, L_bins, B_bins = process_chunks_mean("testvvv2.db", "EJK")
-    right_map, L_bins, B_bins = process_chunks_mean(datafile, "KCOMBERR", "right_map")
+    left_map, L_bins, B_bins = crunch_middle_right("/users/alex/Data/cross.csv")
+    present_left(left_map, L_bins, B_bins)
 
 ### Section FOUR: Left
 

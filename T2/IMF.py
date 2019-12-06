@@ -6,7 +6,10 @@ import scipy.stats as ss
 
 
 def chabrier(m):
-    return (0.158/(np.log(10)*m))*np.exp(-((np.log10(m)-np.log10(0.079))**2/(2*0.69**2)))
+    if m<=0:
+        return 0
+    else:
+        return (0.158/(np.log(10)*m))*np.exp(-((np.log10(m)-np.log10(0.079))**2/(2*0.69**2)))
 
 def normalisation(x):
 	return simps(chabrier(x), x)
