@@ -59,8 +59,8 @@ def onclick(event):
 
 
 # Taking the useful stuff from the isochrone table
-iso_table = pd.read_csv("isoF2.db")
-iso_table['con'] = False
+iso_table = pd.read_csv("isoF4.db")
+iso_table['conG'] = False
 df = iso_table.copy()
 
 # Plotting these 3 vars in a box just to get a feel for the data
@@ -89,9 +89,9 @@ for mh in pb(metall, redirect_stdout=True):
     fig.canvas.mpl_disconnect(cid)
     for coord in coords:
         Kmag_c, masses_c = closest_node(coord, [(s.Kmag, s.masses) for _, s in sel.iterrows()])
-        df.loc[(df['Kmag']==Kmag_c) & (df['masses']==masses_c), 'con'] = True
+        df.loc[(df['Kmag']==Kmag_c) & (df['masses']==masses_c), 'conG'] = True
 
-df.to_csv('isoF3.db', index=False)
+df.to_csv('isoF5.db', index=False)
 
 
 

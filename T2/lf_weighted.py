@@ -37,6 +37,53 @@ def find_nearest(array, value):
     idx = (np.abs(array - value)).argmin()
     return array[idx]
 
+def find_neighbours(array, value):
+    # Array must be sorted and unique
+    array = np.asarray(array)
+    dists = (np.abs(array-value))
+    dist = dists.min() 
+    idx = dists.argmin()
+    first = array[idx]
+    if idx+1 == len(array):
+        return [array[-2], array[-1]]
+    elif idx == 0:
+        return [array[0], array[1]]
+    elif dists[idx+1] < dists[idx-1]:
+        return [first, array[idx+1]]
+    else:
+        return [array[idx-1], first]
+
+def weighted_mean(weights, vals):
+    return np.sum(weights*vals)/np.sum(weights)
+
+def weighted_average(ms_master, derivs_master, neighbours, z):
+    # ms_master = sorted(ms_master)
+    # derivs_master = sorted(derivs_master)
+
+    left_dist = z-neighbours[0]
+    right_dist = neighbours[1]-z
+
+    #print(left_dist, right_dist)
+
+    if len(ms_master[0])==len(ms_master[1]):
+        ms_final = [weighted_mean([left_dist, right_dist], i)
+                        for i in np.transpose(ms_master)]
+        derivs_final = [weighted_mean([left_dist, right_dist], i)
+                        for i in np.transpose(derivs_master)]
+        return ms_final, derivs_final
+    elif left_dist < right_dist:
+        if len(ms_master[0])!=len(derivs_master[0]):
+            print("Something went wrong 1")
+            print(ms_master[0])
+            print(derivs_master[0])
+        return ms_master[0], derivs_master[0]
+    else:
+        if len(ms_master[1])!=len(derivs_master[1]):
+            print("Something went wrong 2")
+            print(ms_master[1])
+            print(derivs_master[1])
+        return ms_master[1], derivs_master[1]
+
 
 # Chabrier IMF PDF
 def chabrier(m):
@@ -74,17 +121,22 @@ types = iso_table[:,9]
 df_arr = np.column_stack((MH, masses, Kmag, classify_stageV(types)))
 df = pd.DataFrame(df_arr, columns=["MH", "masses", "Kmag", "types"])
 
+df = df[df["Kmag"].between(-3.5, 1.0)]
+df = df[df["MH"].between(-2.279, 0.198)]
+
+
 # Plotting these 3 vars in a box just to get a feel for the data
 fig = plt.figure()
 ax = Axes3D(fig)
 plt.title("Isochrone mass-magnitude")
-#for typ in [1,2,3]:
-#    filt = df[df["types"]==typ]
-#    ax.scatter(filt["masses"], filt["Kmag"], filt["MH"], marker=".",
-ax.scatter(df["masses"], df["Kmag"], df["MH"], marker=".")
-ax.set_xlabel("mass")
-ax.set_ylabel("mag")
-ax.set_zlabel("metallicity")
+for typ in [1,2,3]:
+    filt = df[df["types"]==typ]
+    ax.scatter(filt["Kmag"], filt["MH"], filt["masses"], marker=".",
+            color=colour_from_type(typ))
+#ax.scatter(df["masses"], df["Kmag"], df["MH"], marker=".")
+ax.set_xlabel("Magnitude")
+ax.set_ylabel("Metallicity")
+ax.set_zlabel("Mass")
 
 print("3D isochrone plot done")
 
@@ -107,8 +159,38 @@ def delete_duplicates(pnts):
 data = iso_table2.to_numpy()
 data[:,2] = jiggle_pntV(data[:,2])
 
+# data = data[(data[:,2] > -3.5) & (data[:,2] < 1.0)]
+# data = data[(data[:,0] > -2.279) & (data[:,0] < 0.198)]
+
 def sort_pnts(pnts):
     return np.array(sorted(pnts, key=lambda x: x[2]))
+
+metallicities = np.sort(np.unique(data[:,0]))
+
+def thetainv_wrap(M, z, typ, show_plt):
+    neighbours = []
+
+    if z <= metallicities[0]:
+        z = metallicities[0]
+        neighbours = [metallicities[0], metallicities[1]]
+    elif z >= metallicities[-1]:
+        z = metallicities[-1]
+        neighbours = [metallicities[-2], metallicities[-1]]
+    else:
+        neighbours = find_neighbours(metallicities, z)
+
+    # print("Neighbours for", z, "are", neighbours)
+    ms_master = []
+    derivs_master = []
+    for n in neighbours:
+        ms, derivs = thetainv(M, n, typ, show_plt)
+        if len(ms)!=len(derivs):
+            print("Something's gone wrong 3")
+        ms_master.append(ms)
+        derivs_master.append(derivs)
+    ms_f, derivs_f = weighted_average(ms_master, derivs_master, neighbours, z)
+    return ms_f, derivs_f
+
 
 
 def thetainv(M, z, typ, show_plt):
@@ -154,6 +236,7 @@ def thetainv(M, z, typ, show_plt):
             sec2 = pnts13[(pnts13[:,2] > leftmin) & (pnts13[:,4]==False)]
             sec3 = pnts[pnts[:,5]==True]
             pnts = [sec1, sec2, sec3]
+            #pnts = [sec1, sec2]
         else:
             pnts = [pnts]
         pnts = [i for i in pnts if len(i)>2]
@@ -187,6 +270,8 @@ def thetainv(M, z, typ, show_plt):
 
         ms.append(spl(M))
         derivs.append(dv(M))
+    if len(ms)!=len(derivs):
+        print("Lengths not equal")
     return ms, derivs
 
 # Doing a few test plots
@@ -200,7 +285,7 @@ for test_z in test_zs:
 
 
 def phi(M, z, typ):
-    ms, derivs = thetainv(M, z, typ, False)
+    ms, derivs = thetainv_wrap(M, z, typ, False)
     phi_c = 0
     for i, m in enumerate(ms):
         if m < 0: m=0
@@ -218,7 +303,8 @@ x = np.linspace(-3.5, 1.0, RES)
 #    plt.plot(x, phi(x, -1.0, i))
 
 def Phi(M, typ):
-    zs = np.unique(data[:,0])
+    # zs = np.unique(data[:,0])
+    zs = np.linspace(np.min(metallicities), np.max(metallicities), 30)
     phis = np.array([phi(M, z, typ) for z in zs])
     MDFs = np.array([MDF(z) for z in zs])
     ys = phis*MDFs
@@ -232,7 +318,8 @@ total = x*0
 ysT = []
 smoothedT = []
 
-for i in pb([1,2,3], redirect_stdout=True):
+#for i in pb([1,2,3], redirect_stdout=True):
+for i in []:
     # Smoothing and plotting
     ys = np.array([Phi(M, i) for M in x])
     ysT.append(ys)
@@ -251,6 +338,10 @@ for i in pb([1,2,3], redirect_stdout=True):
     plt.ylabel("Luminosity Function (Arbitrary Units)")
     print("Done Branch ", i)
 plt.plot(x, total, linestyle='-.', color='black')
+
+
+plt.show()
+quit(0)
 
 # Saving
 np.save("Cache/xs", x)
