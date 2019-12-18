@@ -4,13 +4,14 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import interp1d, make_interp_spline, BSpline, UnivariateSpline
 import scipy.stats as ss
 import IMF
+from progressbar import progressbar as pb
 
 # 1: Constant and Helper Function Definition
 
 bulge_age = 10 #Gyr
 
 # The number of samples of metallicity and IMF
-N = int(1e3)
+N = int(1e6)
 
 # Finds nearest value in an array
 def find_nearest(array, value):
@@ -69,8 +70,11 @@ print("Metallicity Done")
 # 2.2: IMF
 
 # Sampling masses from lognormal IMF
-sampled_IMF = IMF.IMF_sample(N)
-np.save("sampledIMF_N"+str(N), np.array(sampled_IMF))
+#sampled_IMF = IMF.IMF_sample(N)
+#np.save("sampledIMF_N"+str(N), np.array(sampled_IMF))
+
+sampled_IMF = IMF.load_samples()
+
 
 plt.figure()
 plt.title("IMF Distribution")
@@ -91,6 +95,8 @@ MH = iso_table[:,1]
 masses = iso_table[:,3]
 Kmag = iso_table[:,32]
 types = iso_table[:,9]
+
+
 
 # Plotting these 3 vars in a box just to get a feel for the data
 fig = plt.figure()
@@ -117,7 +123,7 @@ plt.figure()
 sampled_mags = []
 
 # Cutting the isochrone into constant metallicity slices
-for i, MHval in enumerate(sampled_metallicities):
+for i, MHval in pb(enumerate(sampled_metallicities), max_value=N):
     nearestMH = find_nearest(MH, MHval)
     mags_i = []
     mass_i = []
@@ -133,11 +139,12 @@ for i, MHval in enumerate(sampled_metallicities):
 
     # Puts these all together in a big array
     data = np.column_stack((mass_i, mags_i, types_i))
+    data = data[(data[:,1] > -3.5) & (data[:,1] < 1.0)]
 
     # Isolating the different types (Not used currently)
-    redgiants = data[data[:,2] == 1] 
-    RC = data[data[:,2] == 2] 
-    asymp = data[data[:,2] == 3] 
+    # redgiants = data[data[:,2] == 1] 
+    # RC = data[data[:,2] == 2] 
+    # asymp = data[data[:,2] == 3] 
 
     # The one we're going to be using
     pnts = data
@@ -168,6 +175,8 @@ for i, MHval in enumerate(sampled_metallicities):
         plt.xlabel("Mass")
         plt.ylabel("Magnitude")
         plt.gca().invert_yaxis()
+        plt.show()
+
 
 sampled_mags = np.array(sampled_mags)
 np.save("sampledmagsN"+str(N), sampled_mags)

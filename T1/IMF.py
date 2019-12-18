@@ -15,6 +15,18 @@ class chabrier_gen(ss.rv_continuous):
     def _pdf(self, x, const):
         return (1.0/const) * chabrier(x)
 
+def load_samples():
+    sfiles = [
+            "1000000",
+            # "4000000",
+            # "5000000"
+            ]
+    samples = np.array([])
+    for s in sfiles:
+        samples = np.concatenate((samples, np.load("Samples/IMF/sampledIMF_N"+s+".npy")))
+    print(samples.shape)
+    return samples
+
 
 def IMF_sample(N=int(1e3)):
     A = 0.8
