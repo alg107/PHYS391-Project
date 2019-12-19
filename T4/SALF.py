@@ -2,11 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
-from scipy.interpolate import interp1d, InterpolatedUnivariateSpline, splev
+from scipy.interpolate import interp1d, UnivariateSpline, NearestNDInterpolator
 from scipy.integrate import simps
 from scipy.ndimage.filters import gaussian_filter1d
 from astropy.convolution import convolve, Gaussian1DKernel
 from progressbar import progressbar as pb
+from scipy.stats import binned_statistic_2d
 
 # Classifies stage based on statement in paper 1
 def classify_stage(val):
@@ -73,22 +74,79 @@ types = iso_table[:,9]
 df_arr = np.column_stack((MH, masses, Kmag, classify_stageV(types)))
 df = pd.DataFrame(df_arr, columns=["MH", "masses", "Kmag", "types"])
 
-df = df[df['Kmag'].between(-3.5, 1.0)]
+df_full = df.copy()
 
-# Plotting these 3 vars in a box just to get a feel for the data
-fig = plt.figure()
-ax = Axes3D(fig)
-plt.title("Isochrone mass-magnitude")
+#df = df[df['Kmag'].between(-3.5, 1.0)]
+df = df[df['Kmag'].between(-5.0, 2.0)]
 
-for typ in [1,2,3]:
-   filt = df[df["types"]==typ]
-   ax.scatter(filt["masses"], filt["MH"], filt["Kmag"], marker=".", 
-           color=colour_from_type(typ))
-#ax.scatter(df["masses"], df["Kmag"], df["MH"], marker=".")
-ax.set_xlabel("Mass ($m$)")
-ax.set_ylabel("Metallicity ($z$)")
-ax.set_zlabel("Magnitude ($M_{K_s}$)")
+def isochrone(m, z, d):
+    mz = np.column_stack((d['masses'], d['MH']))
+    interpolator = NearestNDInterpolator(mz, d['Kmag'])
+    return interpolator(m,z)
+
+def plot_isochrone(df):
+    # Plotting these 3 vars in a box just to get a feel for the data
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    plt.title("Isochrone mass-magnitude")
+
+    for typ in [1,2,3]:
+       filt = df[df["types"]==typ]
+       ax.scatter(filt["masses"], filt["MH"], filt["Kmag"], marker=".", 
+               color=colour_from_type(typ))
+    #ax.scatter(df["masses"], df["Kmag"], df["MH"], marker=".")
+    x = 0.9
+    y = -0.7
+    ax.scatter(x, y, isochrone(x,y, df), marker=".", color="orange")
+    ax.set_xlabel("Mass ($m$)")
+    ax.set_ylabel("Metallicity ($z$)")
+    ax.set_zlabel("Magnitude ($M_{K_s}$)")
+    return plt
+
+
+plot_isochrone(df)
+plt.show()
+
+# plot_isochrone(df[df['Kmag']<=-2.0])
+
 
 print("3D isochrone plot done")
+
+binx = 200
+biny = 25
+
+plot_arr = binned_statistic_2d(df['masses'], df['MH'], df['Kmag'], bins=[binx, biny])
+plt.figure
+plt.imshow(plot_arr.statistic.T, aspect=binx/biny)
+plt.colorbar()
+
+
+
+
+
+def SA_CDF(M_star):
+    df_local = df[df['Kmag'] <= M_star]
+    return integrate_df(df_local)
+SA_CDF_V = np.vectorize(SA_CDF)
+
+def integrate_df(df_local):
+    # This function needs to compute the double integral
+    # under the given scatter plot
+    return 0
+
+def deriv(MKs_s, CDF):
+    spl = UnivariateSpline(MKs_s, CDF, k=3, s=0)
+    d = spl.derivative()
+    # Could also just return the spline 
+    # As this would give a smoother fit
+    # if for some reason I wanted to reduce
+    # noise
+    return d(MKs_s)
+
+MKs_s = np.linspace(-3.5, 1.0, 100)
+CDF = SA_CDF_V(MKs_s)
+SALF = deriv(MKs_s, CDF)
+# plt.figure()
+# plt.plot(MKs_s, SALF)
 
 plt.show()

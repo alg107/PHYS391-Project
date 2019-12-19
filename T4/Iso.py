@@ -1,0 +1,153 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.interpolate import interp1d, UnivariateSpline, NearestNDInterpolator
+from progressbar import progressbar as pb
+from scipy.stats import binned_statistic_2d
+
+# Classifies stage based on statement in paper 1
+def classify_stage(val):
+    # 1: Red Giant
+    # 2: RC
+    # 3: Asymptotic Giant
+    if val<=3:
+        return 1
+    elif val <= 6:
+        return 2
+    else:
+        return 3 
+classify_stageV = np.vectorize(classify_stage)
+
+# Gets a colour given a number from 1-3
+def colour_from_type(typ):
+    if typ==1:
+        return "red"
+    elif typ==2:
+        return "blue"
+    elif typ==3:
+        return "green"
+    else:
+        return "yellow"
+
+def find_nearest(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return array[idx]
+
+def find_neighbour(array, value):
+    # Array must be sorted and unique
+    # Returns index
+    array = np.asarray(array)
+    dists = (np.abs(array-value))
+    dist = dists.min() 
+    idx = dists.argmin()
+    first = array[idx]
+    if idx+1 == len(array):
+        return -1
+    elif idx == 0:
+        return 0
+    elif dists[idx+1] < dists[idx-1]:
+        return idx
+    else:
+        return idx-1
+
+
+# Chabrier IMF PDF
+def chabrier(m):
+    if m <= 0:
+        return 0
+    else:
+        return (0.158/(np.log(10)*m))*np.exp(-((np.log10(m)-np.log10(0.079))**2/(2*0.69**2)))
+
+# Normal distribution
+def norm(x, m, s):
+    return (1/np.sqrt(2*np.pi*s**2))*np.exp(-((x-m)**2/(2*s**2)))
+
+# Mass distr. fn.
+def MDF(z):
+    return norm(z, 0.0, 0.4)
+
+# jiggles points very very slightly just to get around the restriction on
+# not having points with equal x-values
+def jiggle_pnts(pnts):
+    return np.array([np.random.random()*0.00000001+i for i in pnts])
+
+# The same but for one point
+def jiggle_pnt(pnt):
+    return np.random.random()*0.00000001+pnt 
+jiggle_pntV = np.vectorize(jiggle_pnt)
+
+class Isochrone():
+    def __init__(self, binx=750, biny=25, fname="iso.db"):
+        # Taking the useful stuff from the isochrone table
+        iso_table = np.loadtxt(fname)
+        MH = iso_table[:,1]
+        masses = iso_table[:,3]
+        Kmag = iso_table[:,32]
+        types = iso_table[:,9]
+        df_arr = np.column_stack((MH, masses, Kmag, classify_stageV(types)))
+        df = pd.DataFrame(df_arr, columns=["MH", "masses", "Kmag", "types"])
+        # df_full = df.copy()
+
+        #df = df[df['Kmag'].between(-3.5, 1.0)]
+        df = df[df['Kmag'].between(-5.0, 2.0)]
+
+        self.df = df
+        self.df_ret = binned_statistic_2d(df['masses'], df['MH'], df['Kmag'], bins=[binx, biny])
+
+    def plot(self):
+        df = self.df
+        # Plotting these 3 vars in a box just to get a feel for the data
+        fig = plt.figure()
+        ax = Axes3D(fig)
+        plt.title("Isochrone mass-magnitude")
+
+        for typ in [1,2,3]:
+           filt = df[df["types"]==typ]
+           ax.scatter(filt["masses"], filt["MH"], filt["Kmag"], marker=".", 
+                   color=colour_from_type(typ))
+        #ax.scatter(df["masses"], df["Kmag"], df["MH"], marker=".")
+        x = 0.9
+        y = -0.7
+        #ax.scatter(x, y, isochrone(x,y, df), marker=".", color="orange")
+        ax.set_xlabel("Mass ($m$)")
+        ax.set_ylabel("Metallicity ($z$)")
+        ax.set_zlabel("Magnitude ($M_{K_s}$)")
+        return plt
+    
+    def colour_plot(self):
+        plt.figure()
+        df = self.df
+        plot_arr = self.df_ret
+        extent = [plot_arr.x_edge[0],
+                  plot_arr.x_edge[-1],
+                  plot_arr.y_edge[0], 
+                  plot_arr.y_edge[-1]]
+        plt.imshow(plot_arr.statistic.T, aspect='auto',  extent=extent)
+        plt.colorbar()
+
+    def interpolate(self, m, z):
+        x_idx = find_neighbour(self.df_ret.x_edge, m)
+        y_idx = find_neighbour(np.flip(self.df_ret.y_edge), z)
+        return self.df_ret.statistic[x_idx, y_idx]
+    interpolateV = np.vectorize(interpolate)
+
+
+
+if __name__=="__main__":
+
+    iso = Isochrone()
+    iso.plot()
+
+    print("3D isochrone plot done")
+
+    val = iso.interpolate(0.871, -0.744)
+    # -3.266
+    print(val)
+
+    iso.colour_plot()
+
+    print("Colour plot done")
+    plt.show()
+
