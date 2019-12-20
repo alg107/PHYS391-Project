@@ -14,7 +14,7 @@ from Iso import Isochrone
 bulge_age = 10 #Gyr
 
 # The number of samples of metallicity and IMF
-N = int(1e6)
+N = int(1e8)
 
 
 # Metallicity
@@ -45,10 +45,10 @@ print("Metallicity Done")
 # 2.2: IMF
 
 # Sampling masses from lognormal IMF
-#sampled_IMF = IMF.IMF_sample(N)
-#np.save("sampledIMF_N"+str(N), np.array(sampled_IMF))
+sampled_IMF = IMF.IMF_sample(N)
+##np.save("sampledIMF_N"+str(N), np.array(sampled_IMF))
 
-sampled_IMF = IMF.load_samples()
+#sampled_IMF = IMF.load_samples()
 
 
 plt.figure()
@@ -77,6 +77,8 @@ for i, m in pb(enumerate(sampled_IMF), max_value=N):
     if not np.isnan(val):
         sampled_mags.append(val)
 sampled_mags = np.array(sampled_mags)
+
+np.save("sampledmagsN"+str(N), sampled_mags)
 
 plt.figure()
 

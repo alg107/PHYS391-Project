@@ -78,6 +78,7 @@ def jiggle_pnt(pnt):
     return np.random.random()*0.00000001+pnt 
 jiggle_pntV = np.vectorize(jiggle_pnt)
 
+
 class Isochrone():
     def __init__(self, binx=750, biny=25, fname="iso.db"):
         # Taking the useful stuff from the isochrone table
@@ -92,9 +93,30 @@ class Isochrone():
 
         #df = df[df['Kmag'].between(-3.5, 1.0)]
         df = df[df['Kmag'].between(-5.0, 2.0)]
+        df['Kmag'] = jiggle_pntV(df['Kmag'])
 
         self.df = df
         self.df_ret = binned_statistic_2d(df['masses'], df['MH'], df['Kmag'], bins=[binx, biny])
+        self.gen_splines()
+
+    def gen_splines(self):
+        zs = np.sort(np.unique(self.df.MH))
+        self.zs = zs
+        spls = {}
+        for z in zs:
+            df_local = self.df[self.df['MH']==z]
+            df_local = df_local.drop_duplicates(subset=['masses'])
+            df_local = df_local.sort_values(by="masses")
+            mmin = df_local.masses.min()
+            mmax = df_local.masses.max()
+
+            spl = UnivariateSpline(df_local.masses, df_local.Kmag, k=1, s=0)
+            spls[z] = (spl, mmin, mmax)
+        self.spl_dict = spls
+        return spls
+
+
+
 
     def plot(self):
         df = self.df
@@ -127,10 +149,19 @@ class Isochrone():
         plt.imshow(plot_arr.statistic.T, aspect='auto',  extent=extent)
         plt.colorbar()
 
-    def interpolate(self, m, z):
+    def interpolate2(self, m, z):
         x_idx = find_neighbour(self.df_ret.x_edge, m)
         y_idx = find_neighbour(np.flip(self.df_ret.y_edge), z)
         return self.df_ret.statistic[x_idx, y_idx]
+    interpolate2V = np.vectorize(interpolate2)
+
+    def interpolate(self, m, z):
+        closest_z = find_nearest(self.zs, z)
+        spl, mmin, mmax = self.spl_dict[closest_z]
+        if m < mmin or m > mmax: 
+            return np.nan
+        else:
+            return spl(m)
     interpolateV = np.vectorize(interpolate)
 
 
@@ -142,6 +173,7 @@ if __name__=="__main__":
 
     print("3D isochrone plot done")
 
+    iso.gen_splines()
     val = iso.interpolate(0.871, -0.744)
     # -3.266
     print(val)
@@ -149,5 +181,6 @@ if __name__=="__main__":
     iso.colour_plot()
 
     print("Colour plot done")
-    plt.show()
+
+    # plt.show()
 

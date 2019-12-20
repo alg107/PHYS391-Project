@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import rv_continuous
+from scipy.stats import rv_continuous, lognorm
 from scipy.integrate import simps
 import scipy.stats as ss
 
@@ -38,3 +38,14 @@ def IMF_sample(N=int(1e3)):
     cdf = chabrier_distr.cdf(x = sample_range, const = norm_constant)
     samples = chabrier_distr.rvs(const = norm_constant, size = N)
     return samples
+
+def IMF_sample(N=int(1e3)):
+    mmin = 0.8
+    mmax = 1.1
+    distr = lognorm(0.57*np.log(10), 0.22)
+    samples = np.array([])
+    while len(samples)<N:
+        toAdd = distr.rvs(N)
+        toAdd = toAdd[(toAdd > mmin) & (toAdd < mmax)]
+        samples = np.append(samples, toAdd)
+    return samples[:N]

@@ -58,7 +58,7 @@ def reconstruct_LF(fname, bins):
 
 if __name__ == "__main__":
     # Calls the above function
-    bcs, counts = reconstruct_LF("Samples/Magnitudes/sampledmagsN10000000.npy", 200)
+    bcs, counts = reconstruct_LF("Samples/Magnitudes/sampledmagsN100000000.npy", 200)
 
     print("Gaussian Fit\n")
 
