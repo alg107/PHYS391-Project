@@ -14,7 +14,7 @@ from Iso import Isochrone
 bulge_age = 10 #Gyr
 
 # The number of samples of metallicity and IMF
-N = int(1e8)
+N = int(1e9)
 
 
 # Metallicity
@@ -78,7 +78,7 @@ for i, m in pb(enumerate(sampled_IMF), max_value=N):
         sampled_mags.append(val)
 sampled_mags = np.array(sampled_mags)
 
-np.save("sampledmagsN"+str(N), sampled_mags)
+np.save("YsampledmagsN"+str(N), sampled_mags)
 
 plt.figure()
 
