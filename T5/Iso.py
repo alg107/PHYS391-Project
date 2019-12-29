@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import interp1d, UnivariateSpline, NearestNDInterpolator
-from progressbar import ProgressBar as pb
+from progressbar import progressbar as pb
 from scipy.stats import binned_statistic_2d
 
 # Classifies stage based on statement in paper 1
@@ -103,6 +103,7 @@ class Isochrone():
         zs = np.sort(np.unique(self.df.MH))
         self.zs = zs
         spls = {}
+        spl_arrs = {}
         for z in zs:
             df_local = self.df[self.df['MH']==z]
             df_local = df_local.drop_duplicates(subset=['masses'])
@@ -112,14 +113,17 @@ class Isochrone():
 
             spl = UnivariateSpline(df_local.masses, df_local.Kmag, k=1, s=0)
             spls[z] = (spl, mmin, mmax)
+            xs = np.linspace(mmin, mmax, 10000)
+            spl_arrs[z] = (xs, np.array([spl(x) for x in xs]), mmin, mmax)
         self.spl_dict = spls
+        self.spl_arrs = spl_arrs
         return spls
 
 
-    def plot(self, df=None):
 
-        if df is None:
-            df = self.df
+
+    def plot(self):
+        df = self.df
         # Plotting these 3 vars in a box just to get a feel for the data
         fig = plt.figure()
         ax = Axes3D(fig)
@@ -137,7 +141,7 @@ class Isochrone():
         ax.set_ylabel("Metallicity ($z$)")
         ax.set_zlabel("Magnitude ($M_{K_s}$)")
         return plt
-
+    
     def colour_plot(self):
         plt.figure()
         df = self.df
@@ -154,6 +158,19 @@ class Isochrone():
         y_idx = find_neighbour(np.flip(self.df_ret.y_edge), z)
         return self.df_ret.statistic[x_idx, y_idx]
     interpolate2V = np.vectorize(interpolate2)
+
+    def plot_slice(self, z):
+        df = self.df
+        plt.figure()
+        closest_z = find_nearest(self.zs, z)
+        pnts = df[df["MH"]==closest_z]
+        for typ in [1,2,3]:
+            pnts_t = pnts[pnts["types"]==typ]
+            plt.scatter(pnts_t["masses"], pnts_t["Kmag"], color=colour_from_type(typ))
+
+        x,y,mmin,mmax = self.spl_arrs[closest_z]
+        plt.plot(x, y)
+
 
     def interpolate(self, m, z):
         closest_z = find_nearest(self.zs, z)

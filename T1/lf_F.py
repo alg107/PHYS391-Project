@@ -14,7 +14,8 @@ from Iso import Isochrone
 bulge_age = 10 #Gyr
 
 # The number of samples of metallicity and IMF
-N = int(1e9)
+N = int(1e7)
+#N = int(1e9)
 
 
 # Metallicity
@@ -53,12 +54,15 @@ sampled_IMF = IMF.IMF_sample(N)
 
 plt.figure()
 plt.title("IMF Distribution")
-IMF_seq = np.linspace(0, 2, IMF_bins)
+IMF_seq = np.linspace(0.8, 1.1, IMF_bins)
 plt.hist(sampled_IMF, IMF_seq, density=True, histtype='step')
-X = np.linspace(0.001, 2, 10000)
-plt.plot(X, IMF.chabrier(X))
+X = np.linspace(0.8, 1.1, 10000)
+plt.plot(X, 100*IMF.chabrier(X))
 
 print("Masses Done")
+## DELETE THIS
+plt.show()
+quit(0)
 
 # 3: Isochrones
 
