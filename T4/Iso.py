@@ -6,6 +6,8 @@ from scipy.interpolate import interp1d, UnivariateSpline, NearestNDInterpolator
 from progressbar import ProgressBar as pb
 from scipy.stats import binned_statistic_2d
 
+types = [3]
+
 # Classifies stage based on statement in paper 1
 def classify_stage(val):
     # 1: Red Giant
@@ -95,7 +97,10 @@ class Isochrone():
         df = df[df['Kmag'].between(-5.0, 2.0)]
         df['Kmag'] = jiggle_pntV(df['Kmag'])
 
+        # Insert filtering code for types==3
+
         self.df = df
+
         self.df_ret = binned_statistic_2d(df['masses'], df['MH'], df['Kmag'], bins=[binx, biny])
         self.gen_splines()
 
@@ -104,14 +109,18 @@ class Isochrone():
         self.zs = zs
         spls = {}
         for z in zs:
+            spls[z] = []
             df_local = self.df[self.df['MH']==z]
             df_local = df_local.drop_duplicates(subset=['masses'])
             df_local = df_local.sort_values(by="masses")
-            mmin = df_local.masses.min()
-            mmax = df_local.masses.max()
+            for typ in types:
+                df2 = df_local[df_local.types==typ]
 
-            spl = UnivariateSpline(df_local.masses, df_local.Kmag, k=1, s=0)
-            spls[z] = (spl, mmin, mmax)
+                mmin = df2.masses.min()
+                mmax = df2.masses.max()
+                spl = UnivariateSpline(df2.masses, df2.Kmag, k=1, s=0)
+
+                spls[z].append((spl, mmin, mmax))
         self.spl_dict = spls
         return spls
 
@@ -157,12 +166,28 @@ class Isochrone():
 
     def interpolate(self, m, z):
         closest_z = find_nearest(self.zs, z)
-        spl, mmin, mmax = self.spl_dict[closest_z]
-        if m < mmin or m > mmax: 
-            return np.nan
-        else:
-            return spl(m)
+        for i, typ in enumerate(types):
+            spl, mmin, mmax = self.spl_dict[closest_z][i]
+            if m < mmin or m > mmax: 
+                continue 
+            else:
+                return spl(m)
+        return np.nan
     interpolateV = np.vectorize(interpolate)
+
+    def plot_slice(self, z, w_spl=True):
+        closest_z = find_nearest(self.zs, z)
+        local_df = self.df[self.df["MH"]==closest_z]
+        pl = plt.figure()
+        for i, typ in enumerate(types):
+            df2 = local_df[local_df["types"]==typ]
+            plt.scatter(df2["masses"], df2["Kmag"], color=colour_from_type(typ))
+            spl, mmin, mmax = self.spl_dict[closest_z][i]
+            x = np.linspace(mmin, mmax, 100000)
+            y = spl(x)
+            plt.plot(x,y)
+        return pl
+
 
 
 
@@ -175,12 +200,13 @@ if __name__=="__main__":
 
     iso.gen_splines()
     val = iso.interpolate(0.871, -0.744)
-    # -3.266
     print(val)
 
-    iso.colour_plot()
+    # iso.colour_plot()
+    # print("Colour plot done")
+    iso.plot_slice(-1.8)
+    iso.plot_slice(-1)
+    iso.plot_slice(-0.5)
 
-    print("Colour plot done")
-
-    # plt.show()
+    plt.show()
 

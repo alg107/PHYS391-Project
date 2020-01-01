@@ -1,3 +1,7 @@
+"""
+Monte-Carlo method using Iso.py Isochrone library
+Author: Alex Goodenbour
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -14,8 +18,9 @@ from Iso import Isochrone
 bulge_age = 10 #Gyr
 
 # The number of samples of metallicity and IMF
-N = int(1e7)
+N = int(1e6)
 #N = int(1e9)
+
 
 
 # Metallicity
@@ -56,22 +61,21 @@ plt.figure()
 plt.title("IMF Distribution")
 IMF_seq = np.linspace(0.8, 1.1, IMF_bins)
 plt.hist(sampled_IMF, IMF_seq, density=True, histtype='step')
-X = np.linspace(0.8, 1.1, 10000)
-plt.plot(X, 100*IMF.chabrier(X))
+X = np.linspace(0.8, 1.1, 1000)
+plt.plot(X, IMF.chabrier2_V(X))
 
 print("Masses Done")
-## DELETE THIS
-plt.show()
-quit(0)
 
 # 3: Isochrones
 
-iso = Isochrone()
 
 # First attempt at generating a LF
 
 # Limits on metallicity from isochrone
 plt.figure()
+
+
+iso = Isochrone()
 
 # This is the array in which we will build up our final histogram
 # Cutting the isochrone into constant metallicity slices
@@ -82,7 +86,7 @@ for i, m in pb(enumerate(sampled_IMF), max_value=N):
         sampled_mags.append(val)
 sampled_mags = np.array(sampled_mags)
 
-np.save("YsampledmagsN"+str(N), sampled_mags)
+np.save("ZsampledmagsN"+str(N), sampled_mags)
 
 plt.figure()
 
@@ -100,6 +104,7 @@ plt.xlabel("Magnitude")
 plt.ylabel("Density")
 
 plt.figure()
+
 plt.scatter(bin_centres, counts, marker="x", color="black")
 
 # # Creating a nice spline to see the pattern
