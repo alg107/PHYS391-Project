@@ -6,7 +6,7 @@ from scipy.interpolate import interp1d, UnivariateSpline, NearestNDInterpolator
 from progressbar import ProgressBar as pb
 from scipy.stats import binned_statistic_2d
 
-types = [3]
+types = [1,2,3]
 
 # Classifies stage based on statement in paper 1
 def classify_stage(val):
@@ -82,7 +82,8 @@ jiggle_pntV = np.vectorize(jiggle_pnt)
 
 
 class Isochrone():
-    def __init__(self, binx=750, biny=25, fname="iso.db"):
+    #def __init__(self, binx=750, biny=25, fname="iso.db"):
+    def __init__(self, binx=750, biny=25, fname="iso_big.db"):
         # Taking the useful stuff from the isochrone table
         iso_table = np.loadtxt(fname)
         MH = iso_table[:,1]

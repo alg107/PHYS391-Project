@@ -18,7 +18,7 @@ from Iso import Isochrone
 bulge_age = 10 #Gyr
 
 # The number of samples of metallicity and IMF
-N = int(1e6)
+N = int(1e7)
 #N = int(1e9)
 
 
