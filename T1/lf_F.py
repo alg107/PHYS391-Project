@@ -91,7 +91,7 @@ np.save("ZsampledmagsN"+str(N), sampled_mags)
 plt.figure()
 
 # Plotting the LF histogram
-final_bins = 200
+final_bins = 75
 bins_seq = np.linspace(-3.5, 1.0, final_bins)
 plt.hist(sampled_mags, bins_seq, density=True, histtype='step')
 counts,bin_edges = np.histogram(sampled_mags, bins_seq, density=True)
