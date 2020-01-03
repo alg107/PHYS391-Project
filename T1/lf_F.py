@@ -72,7 +72,6 @@ print("Masses Done")
 # First attempt at generating a LF
 
 # Limits on metallicity from isochrone
-plt.figure()
 
 
 iso = Isochrone()
@@ -93,7 +92,7 @@ plt.figure()
 # Plotting the LF histogram
 final_bins = 75
 bins_seq = np.linspace(-3.5, 1.0, final_bins)
-plt.hist(sampled_mags, bins_seq, density=True, histtype='step')
+plt.hist(sampled_mags, bins_seq, density=True)
 counts,bin_edges = np.histogram(sampled_mags, bins_seq, density=True)
 
 bin_centres = (bin_edges[:-1] + bin_edges[1:])/2.
@@ -103,9 +102,9 @@ plt.title("LF Histogram")
 plt.xlabel("Magnitude")
 plt.ylabel("Density")
 
-plt.figure()
+# plt.figure()
 
-plt.scatter(bin_centres, counts, marker="x", color="black")
+# plt.scatter(bin_centres, counts, marker="x", color="black")
 
 # # Creating a nice spline to see the pattern
 # xnew = np.linspace(bin_centres.min(), bin_centres.max(), 1000) 

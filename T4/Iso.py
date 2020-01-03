@@ -119,7 +119,7 @@ class Isochrone():
 
                 mmin = df2.masses.min()
                 mmax = df2.masses.max()
-                spl = UnivariateSpline(df2.masses, df2.Kmag, k=1, s=0)
+                spl = UnivariateSpline(df2.masses, df2.Kmag, k=3, s=0)
 
                 spls[z].append((spl, mmin, mmax))
         self.spl_dict = spls
@@ -135,7 +135,7 @@ class Isochrone():
         ax = Axes3D(fig)
         plt.title("Isochrone mass-magnitude")
 
-        for typ in [1,2,3]:
+        for typ in types:
            filt = df[df["types"]==typ]
            ax.scatter(filt["masses"], filt["MH"], filt["Kmag"], marker=".", 
                    color=colour_from_type(typ))
@@ -154,8 +154,7 @@ class Isochrone():
         plot_arr = self.df_ret
         extent = [plot_arr.x_edge[0],
                   plot_arr.x_edge[-1],
-                  plot_arr.y_edge[0], 
-                  plot_arr.y_edge[-1]]
+                  plot_arr.y_edge[0], plot_arr.y_edge[-1]]
         plt.imshow(plot_arr.statistic.T, aspect='auto',  extent=extent)
         plt.colorbar()
 
@@ -202,12 +201,16 @@ if __name__=="__main__":
     iso.gen_splines()
     val = iso.interpolate(0.871, -0.744)
     print(val)
+    metall = np.unique(iso.df['MH'])
+    print(metall)
 
     # iso.colour_plot()
     # print("Colour plot done")
-    iso.plot_slice(-1.8)
-    iso.plot_slice(-1)
-    iso.plot_slice(-0.5)
+    iso.plot_slice(-2.152)
+    iso.plot_slice(-1.644)
+    iso.plot_slice(-1.136)
+    iso.plot_slice(-0.36)
+    iso.plot_slice(0.134)
 
     plt.show()
 
