@@ -119,7 +119,7 @@ class Isochrone():
 
                 mmin = df2.masses.min()
                 mmax = df2.masses.max()
-                spl = UnivariateSpline(df2.masses, df2.Kmag, k=3, s=0)
+                spl = UnivariateSpline(df2.masses, df2.Kmag, k=1, s=0)
 
                 spls[z].append((spl, mmin, mmax))
         self.spl_dict = spls
