@@ -1,6 +1,7 @@
 """
 Monte-Carlo method using Iso.py Isochrone library
 Author: Alex Goodenbour
+Version: Outlier Fixed
 """
 import numpy as np
 import matplotlib.pyplot as plt
