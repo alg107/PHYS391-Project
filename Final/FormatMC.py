@@ -5,6 +5,7 @@ from scipy.stats import norm
 from scipy.ndimage import gaussian_filter
 from scipy.interpolate import UnivariateSpline
 from scipy.integrate import simps
+from scipy.optimize import curve_fit
 import functools
 
 """
@@ -18,10 +19,16 @@ sigma = 0.05
 
 xmin = -3.5
 xmax = 1.0
-NORM = 1.0/8081.533
+NORM = 1.0/1606.98
 BINS = 1000 # Kind of arbitrary but not too low
 
 N = int(1e7)
+
+# Gaussian function for fitting to RC
+def gauss(x, *p):
+    a,b,c,d = p
+    y = a*np.exp(-np.power((x-b), 2.0)/(2.0*c**2))+d
+    return y
 
 colours = {
         1: (203.0/256, 101.0/256, 39.0/256), 
@@ -29,6 +36,14 @@ colours = {
         3: (219.0/256, 148.0/256, 194.0/256),
         4: (74.0/256, 155.0/256, 122.0/256)
         }
+
+def RC_sigma(x,y):
+    guess_ps = [1,-1,0.5,0]
+    popt, pcov = curve_fit(gauss, x, y, p0=guess_ps)
+    print("Red Clump Mean:", popt[1])
+    print("Red Clump STDDEV:", np.abs(popt[2]))
+    return popt[1], popt[2]
+    
 
 # Plots a given branch from its samples
 def reconstruct_LF(fname, bins, color, t):
@@ -70,6 +85,10 @@ def reconstruct_LF(fname, bins, color, t):
         y = NORM*spl(x)
         plt.plot(x, y, color=color)
 
+    # Fit parameters to RC
+    if t==2:
+        RC_sigma(x, NORM*spl(x))
+
     return bin_centres, counts, spl, smoothed
 
 typs = [1,2,3]
@@ -85,7 +104,7 @@ if __name__ == "__main__":
     plt.xlabel("$M_{K_s}$")
     plt.ylabel("Luminosity Function (Arbitrary Units)")
 
-    plt.ylim(0.0, 1.3) # Adjust as necessary
+    #plt.ylim(0.0, 1.3) # Adjust as necessary
     plt.xlim(xmin, xmax)
 
     spls = []
