@@ -13,8 +13,11 @@ This script is to be run after samples have been generated
 with MonteCarlo.py
 """
 
+## SECTION ONE: Helper Functions & Constant Definition
 
 # Constant definition
+typs = [1,2,3]
+
 sigma = 0.05
 
 xmin = -3.5
@@ -30,6 +33,18 @@ def gauss(x, *p):
     y = a*np.exp(-np.power((x-b), 2.0)/(2.0*c**2))+d
     return y
 
+def setup_plot():
+    # Some matplotlib initialisation
+    matplotlib.rcParams['mathtext.fontset'] = 'stix'
+    matplotlib.rcParams['font.family'] = 'STIXGeneral'
+
+    plt.xlabel("$M_{K_s}$")
+    plt.ylabel("Luminosity Function (Arbitrary Units)")
+
+    #plt.ylim(0.0, 1.3) # Adjust as necessary
+    plt.xlim(xmin, xmax)
+
+
 colours = {
         1: (203.0/256, 101.0/256, 39.0/256), 
         2: (115.0/256, 114.0/256, 174.0/256),
@@ -37,21 +52,20 @@ colours = {
         4: (74.0/256, 155.0/256, 122.0/256)
         }
 
+## SECTION TWO: Slightly More Important Functions
+
 def RC_sigma(x,y):
     guess_ps = [1,-1,0.5,0]
     popt, pcov = curve_fit(gauss, x, y, p0=guess_ps)
     print("Red Clump Mean:", popt[1])
     print("Red Clump STDDEV:", np.abs(popt[2]))
     return popt[1], popt[2]
-    
 
-# Plots a given branch from its samples
-def reconstruct_LF(fname, bins, color, t):
+def pnts_from_samples(fname, bins):
     samples = np.load(fname)
 
     # Structure of histogram
     bins_seq = np.linspace(xmin, xmax, bins)
-    step = (xmax-xmin)/bins
 
     # Tangible histogram with useful return values
     counts,bin_edges = np.histogram(samples, bins_seq)
@@ -59,6 +73,13 @@ def reconstruct_LF(fname, bins, color, t):
 
     # Centres from edges
     bin_centres = (bin_edges[:-1] + bin_edges[1:])/2.
+    return bin_centres, counts
+
+    
+# SECTION THREE: The Reconstruction (Very Important)
+
+# Plots a given branch from its points (does smoothing)
+def reconstruct_LF(bin_centres, counts, step, color, t):
 
     # Convolving with gaussian
     smoothed = gaussian_filter(counts, sigma/step)
@@ -89,31 +110,31 @@ def reconstruct_LF(fname, bins, color, t):
     if t==2:
         RC_sigma(x, NORM*spl(x))
 
-    return bin_centres, counts, spl, smoothed
+    return spl, smoothed
 
-typs = [1,2,3]
+# SECTION FOUR: Method Specific Wrappers
 
-if __name__ == "__main__":
+def MC_Points(t):
+    return pnts_from_samples(
+            "Results/MCSamples/type"+str(t)+"N"+str(N)+".npy",
+            BINS
+            )
 
+def SALF_Points(t):
+    pass
+
+def plot_Method(pnts_fn):
     plt.figure()
+    setup_plot()
 
-    # Some matplotlib initialisation
-    matplotlib.rcParams['mathtext.fontset'] = 'stix'
-    matplotlib.rcParams['font.family'] = 'STIXGeneral'
-
-    plt.xlabel("$M_{K_s}$")
-    plt.ylabel("Luminosity Function (Arbitrary Units)")
-
-    #plt.ylim(0.0, 1.3) # Adjust as necessary
-    plt.xlim(xmin, xmax)
+    step = (xmax-xmin)/BINS
 
     spls = []
     for t in typs:
         
-        # Calls the above function
-        bcs, counts, spl, smoothed = reconstruct_LF(
-                "Results/MCSamples/type"+str(t)+"N"+str(N)+".npy"
-                     , BINS, colours[t], t)
+        # Calls the above functions
+        bcs, counts = pnts_fn(t)
+        spl, smoothed = reconstruct_LF(bcs, counts, step, colours[t], t)
         spls.append(spl)
 
     x = np.linspace(xmin, xmax, 10000)
@@ -132,5 +153,7 @@ if __name__ == "__main__":
         "Total"
         ])
 
+if __name__ == "__main__":
+    plot_Method(MC_Points)
     plt.show()
 
