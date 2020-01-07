@@ -19,7 +19,7 @@ with MonteCarlo.py
 # Constant definition
 typs = [1,2,3]
 
-sigma = 0.01
+sigma = 0.05
 
 xmin = -3.5
 xmax = 1.0

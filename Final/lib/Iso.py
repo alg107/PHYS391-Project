@@ -136,8 +136,8 @@ class Isochrone():
             for t in self.typs:
                 spls[z][t] = []
                 df_local = self.df[(self.df['MH']==z)&(self.df['types']==t)]
-                df_local = df_local.drop_duplicates(subset=['masses'])
-                df_local = df_local.drop_duplicates(subset=['Kmag'])
+                # df_local = df_local.drop_duplicates(subset=['masses'])
+                # df_local = df_local.drop_duplicates(subset=['Kmag'])
                 # df_local = df_local.sort_values(by="masses")
 
                 pnts = np.column_stack((df_local.Kmag, df_local.masses))
@@ -275,7 +275,7 @@ class Isochrone():
 if __name__=="__main__":
 
     iso = Isochrone()
-    # iso.plot()
+    iso.plot()
 
     # print("3D isochrone plot done")
 

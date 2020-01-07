@@ -1,11 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import interp1d, InterpolatedUnivariateSpline, splev
-from scipy.integrate import simps
+from scipy.integrate import simps, trapz
 from scipy.ndimage.filters import gaussian_filter1d
-from astropy.convolution import convolve, Gaussian1DKernel
 from progressbar import progressbar as pb
 from lib.Iso import Isochrone
 from lib.IMF import chabrier2 as chabrier
@@ -28,7 +26,7 @@ def phi(M, z, typs):
         phi_c += chabrier(m)*np.abs(derivs[i])
     return phi_c
 
-RES = 1000
+RES = 500000
 x = np.linspace(-3.5, 1.0, RES)
 
 def Phi(M, typ):
@@ -36,7 +34,7 @@ def Phi(M, typ):
     phis = np.array([phi(M, z, [typ]) for z in zs])
     MDFs = np.array([MDF(z) for z in zs])
     ys = phis*MDFs
-    I = simps(ys, zs)
+    I = trapz(ys, zs)
     #print(I)
     return I
 
