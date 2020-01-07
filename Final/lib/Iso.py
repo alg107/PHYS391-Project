@@ -96,6 +96,7 @@ class Isochrone():
         #df = df[df['Kmag'].between(-3.5, 1.0)]
         df = df[df['Kmag'].between(-5.0, 2.0)]
         df['Kmag'] = jiggle_pntV(df['Kmag'])
+        df['masses'] = jiggle_pntV(df['masses'])
 
         # Insert filtering code for types==3
 
@@ -104,6 +105,7 @@ class Isochrone():
 
         self.df_ret = binned_statistic_2d(df['masses'], df['MH'], df['Kmag'], bins=[binx, biny])
         self.gen_splines()
+        self.gen_inverse_splines()
 
     def gen_splines(self):
         zs = np.sort(np.unique(self.df.MH))
@@ -124,6 +126,61 @@ class Isochrone():
                 spls[z].append((spl, mmin, mmax))
         self.spl_dict = spls
         return spls
+
+    def gen_inverse_splines(self):
+        zs = np.sort(np.unique(self.df.MH))
+        self.zs = zs
+        spls = {}
+        for z in zs:
+            spls[z] = {} 
+            for t in self.typs:
+                spls[z][t] = []
+                df_local = self.df[(self.df['MH']==z)&(self.df['types']==t)]
+                df_local = df_local.drop_duplicates(subset=['masses'])
+                df_local = df_local.drop_duplicates(subset=['Kmag'])
+                # df_local = df_local.sort_values(by="masses")
+
+                pnts = np.column_stack((df_local.Kmag, df_local.masses))
+                pnts = pnts[pnts[:,1].argsort()]
+                split_idx = []
+                for i, pnt in enumerate(pnts[1:-1]):
+                    if pnts[i][0] < pnts[i-1][0] and pnts[i][0] < pnts[i+1][0]:
+                        # print("Relative Minima")
+                        split_idx.append(i)
+                    elif pnts[i][0] > pnts[i-1][0] and pnts[i][0] > pnts[i+1][0]:
+                        # print("Relative Maxima")
+                        split_idx.append(i)
+                split_pnts = np.split(pnts, split_idx)
+
+
+
+
+                # This loop just puts extrema in both sides' splines
+                for i, j in enumerate(split_pnts[:-1]):
+                    split_pnts[i] = np.vstack((split_pnts[i], split_pnts[i+1][0]))
+
+                # Delete sections with lengths less than two
+                # so spline doesn't fail
+                del_idxs = []
+                for i, pnt in enumerate(split_pnts):
+                    if len(pnt)<=1:
+                        del_idxs.append(i)
+                split_pnts = np.delete(split_pnts, del_idxs, axis=0)
+
+                split_pnts = np.array(split_pnts)
+
+                
+                for i, sec in enumerate(split_pnts):
+                    if len(sec)!=0:
+                        sec = sec[sec[:,0].argsort()]
+                        mmin = sec[:,0].min()
+                        mmax = sec[:,0].max()
+                        spl = UnivariateSpline(sec[:,0], sec[:,1], k=1, s=0)
+                        spls[z][t].append((spl, mmin, mmax))
+
+        self.inv_spl_dict = spls
+        return spls
+
 
 
     def plot(self, df=None):
@@ -175,6 +232,18 @@ class Isochrone():
         return np.nan
     interpolateV = np.vectorize(interpolate)
 
+    def inverse_interpolate(self, Kmag, z, typs=[1,2,3]):
+        results = []
+        dresults = []
+        closest_z = find_nearest(self.zs, z)
+        for typ in typs:
+            spls = self.inv_spl_dict[closest_z][typ]
+            for spl, mmin, mmax in spls:
+                if Kmag >= mmin and Kmag <= mmax: 
+                    results.append(float(spl(Kmag)))
+                    dresults.append(float(spl.derivative()(Kmag)))
+        return results, dresults
+
     def plot_slice(self, z, w_spl=True):
         closest_z = find_nearest(self.zs, z)
         local_df = self.df[self.df["MH"]==closest_z]
@@ -188,29 +257,36 @@ class Isochrone():
             plt.plot(x,y)
         return pl
 
+    def plot_inverse_slice(self, z, w_spl=True):
+        closest_z = find_nearest(self.zs, z)
+        local_df = self.df[self.df["MH"]==closest_z]
+        pl = plt.figure()
+        for typ in self.typs:
+            df2 = local_df[local_df["types"]==typ]
+            plt.scatter(df2["Kmag"], df2["masses"], color=colour_from_type(typ))
+            for spl, mmin, mmax in self.inv_spl_dict[closest_z][typ]:
+                x = np.linspace(mmin, mmax, 100000)
+                y = spl(x)
+                plt.plot(x,y)
 
+        return pl
 
 
 if __name__=="__main__":
 
     iso = Isochrone()
-    iso.plot()
+    # iso.plot()
 
-    print("3D isochrone plot done")
+    # print("3D isochrone plot done")
 
-    iso.gen_splines()
-    val = iso.interpolate(0.871, -0.744)
-    print(val)
-    metall = np.unique(iso.df['MH'])
-    print(metall)
+    # val = iso.interpolate(0.871, -0.744)
+    # print(val)
 
     # iso.colour_plot()
     # print("Colour plot done")
-    iso.plot_slice(-2.152)
-    iso.plot_slice(-1.644)
-    iso.plot_slice(-1.136)
-    iso.plot_slice(-0.36)
-    iso.plot_slice(0.134)
+    iso.plot_inverse_slice(0.0)
+    var = iso.inverse_interpolate(-1.1, 0.0, [1])
+    print(var)
 
     plt.show()
 

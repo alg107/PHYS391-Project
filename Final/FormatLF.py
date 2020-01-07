@@ -6,6 +6,7 @@ from scipy.ndimage import gaussian_filter
 from scipy.interpolate import UnivariateSpline
 from scipy.integrate import simps
 from scipy.optimize import curve_fit
+from lib.Iso import Isochrone
 import functools
 
 """
@@ -18,11 +19,12 @@ with MonteCarlo.py
 # Constant definition
 typs = [1,2,3]
 
-sigma = 0.05
+sigma = 0.01
 
 xmin = -3.5
 xmax = 1.0
-NORM = 1.0/1606.98
+#NORM = 1.0/1606.98
+NORM = 1.0
 BINS = 1000 # Kind of arbitrary but not too low
 
 N = int(1e7)
@@ -73,7 +75,7 @@ def pnts_from_samples(fname, bins):
 
     # Centres from edges
     bin_centres = (bin_edges[:-1] + bin_edges[1:])/2.
-    return bin_centres, counts
+    return bin_centres, counts, (xmax-xmin)/BINS
 
     
 # SECTION THREE: The Reconstruction (Very Important)
@@ -85,30 +87,30 @@ def reconstruct_LF(bin_centres, counts, step, color, t):
     smoothed = gaussian_filter(counts, sigma/step)
 
     x = np.linspace(xmin, xmax, 10000)
-    spl = UnivariateSpline(bin_centres, smoothed) # Cubic
+    spl = UnivariateSpline(bin_centres, smoothed, k=3, s=0) # Cubic
     if t == 1:
         # Just snapping off the exponential background
         # very roughly
         pnts = np.column_stack((bin_centres, smoothed))
-        pnts = pnts[(pnts[:,0]<-1.89) | (pnts[:,0]>-0.63)]
+        pnts = pnts[(pnts[:,0] < -1.89) | (pnts[:,0] > -0.63)]
 
-        spl1 = UnivariateSpline(pnts[:,0], pnts[:,1])
+        spl1 = UnivariateSpline(pnts[:,0], pnts[:,1], s=0)
         spl2 = UnivariateSpline(
-                bin_centres, smoothed-spl1(bin_centres))
+                bin_centres, smoothed-spl1(bin_centres), s=0)
 
-        y1 = NORM*spl1(x)
-        y2 = NORM*spl2(x)
+        y1 = spl1(x)
+        y2 = spl2(x)
 
         plt.plot(x, y1, color=colours[4])
         plt.plot(x, y2, color=color)
     else:
         # Otherwise we just have the one spline to plot
-        y = NORM*spl(x)
+        y = spl(x)
         plt.plot(x, y, color=color)
 
     # Fit parameters to RC
     if t==2:
-        RC_sigma(x, NORM*spl(x))
+        RC_sigma(x, spl(x))
 
     return spl, smoothed
 
@@ -121,19 +123,21 @@ def MC_Points(t):
             )
 
 def SALF_Points(t):
-    pass
+    xs = np.load("Results/SALF/xs_t"+str(t)+".npy")
+    ys = np.load("Results/SALF/ys_t"+str(t)+".npy")
+    return xs, ys, xs[1]-xs[0]
 
 def plot_Method(pnts_fn):
     plt.figure()
     setup_plot()
 
-    step = (xmax-xmin)/BINS
 
     spls = []
     for t in typs:
         
         # Calls the above functions
-        bcs, counts = pnts_fn(t)
+        bcs, counts, step = pnts_fn(t)
+        counts = NORM*counts
         spl, smoothed = reconstruct_LF(bcs, counts, step, colours[t], t)
         spls.append(spl)
 
@@ -141,8 +145,8 @@ def plot_Method(pnts_fn):
     y = x*0
     for spl in spls:
         y = y+spl(x)
-    plt.plot(x,NORM*y, color="black", linestyle="-.")
-    area = simps(NORM*y,x)
+    plt.plot(x,y, color="black", linestyle="-.")
+    area = simps(y,x)
     print("Area:", area)
 
     plt.legend([
@@ -154,6 +158,11 @@ def plot_Method(pnts_fn):
         ])
 
 if __name__ == "__main__":
+    plot_Method(SALF_Points)
+    plt.title("SALF")
     plot_Method(MC_Points)
+    plt.title("Monte Carlo")
+    # iso = Isochrone()
+    # iso.plot()
     plt.show()
 
