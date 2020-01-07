@@ -1,83 +1,20 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib
-from scipy.stats import norm
 from scipy.ndimage import gaussian_filter
 from scipy.interpolate import UnivariateSpline
 from scipy.integrate import simps
-from scipy.optimize import curve_fit
 from lib.Iso import Isochrone
-import functools
+from lib.Helpers import (gauss, setup_plot, colours,
+                        RC_sigma, pnts_from_samples, 
+                        MC_Points, SALF_Points)
+from lib.Constants import *
+
 
 """
 This script is to be run after samples have been generated
-with MonteCarlo.py
+with MonteCarlo.py and SALF.py
 """
 
-## SECTION ONE: Helper Functions & Constant Definition
-
-# Constant definition
-typs = [1,2,3]
-
-sigma = 0.05
-
-xmin = -3.5
-xmax = 1.0
-#NORM = 1.0/1606.98
-NORM = 1.0
-BINS = 1000 # Kind of arbitrary but not too low
-
-N = int(1e7)
-
-# Gaussian function for fitting to RC
-def gauss(x, *p):
-    a,b,c,d = p
-    y = a*np.exp(-np.power((x-b), 2.0)/(2.0*c**2))+d
-    return y
-
-def setup_plot():
-    # Some matplotlib initialisation
-    matplotlib.rcParams['mathtext.fontset'] = 'stix'
-    matplotlib.rcParams['font.family'] = 'STIXGeneral'
-
-    plt.xlabel("$M_{K_s}$")
-    plt.ylabel("Luminosity Function (Arbitrary Units)")
-
-    #plt.ylim(0.0, 1.3) # Adjust as necessary
-    plt.xlim(xmin, xmax)
-
-
-colours = {
-        1: (203.0/256, 101.0/256, 39.0/256), 
-        2: (115.0/256, 114.0/256, 174.0/256),
-        3: (219.0/256, 148.0/256, 194.0/256),
-        4: (74.0/256, 155.0/256, 122.0/256)
-        }
-
-## SECTION TWO: Slightly More Important Functions
-
-def RC_sigma(x,y):
-    guess_ps = [1,-1,0.5,0]
-    popt, pcov = curve_fit(gauss, x, y, p0=guess_ps)
-    print("Red Clump Mean:", popt[1])
-    print("Red Clump STDDEV:", np.abs(popt[2]))
-    return popt[1], popt[2]
-
-def pnts_from_samples(fname, bins):
-    samples = np.load(fname)
-
-    # Structure of histogram
-    bins_seq = np.linspace(xmin, xmax, bins)
-
-    # Tangible histogram with useful return values
-    counts,bin_edges = np.histogram(samples, bins_seq)
-
-
-    # Centres from edges
-    bin_centres = (bin_edges[:-1] + bin_edges[1:])/2.
-    return bin_centres, counts, (xmax-xmin)/BINS
-
-    
 # SECTION THREE: The Reconstruction (Very Important)
 
 # Plots a given branch from its points (does smoothing)
@@ -114,18 +51,6 @@ def reconstruct_LF(bin_centres, counts, step, color, t):
 
     return spl, smoothed
 
-# SECTION FOUR: Method Specific Wrappers
-
-def MC_Points(t):
-    return pnts_from_samples(
-            "Results/MCSamples/type"+str(t)+"N"+str(N)+".npy",
-            BINS
-            )
-
-def SALF_Points(t):
-    xs = np.load("Results/SALF/xs_t"+str(t)+".npy")
-    ys = np.load("Results/SALF/ys_t"+str(t)+".npy")
-    return xs, ys, xs[1]-xs[0]
 
 def plot_Method(pnts_fn):
     plt.figure()
@@ -136,7 +61,7 @@ def plot_Method(pnts_fn):
     for t in typs:
         
         # Calls the above functions
-        bcs, counts, step = pnts_fn(t)
+        bcs, counts, step, NORM = pnts_fn(t)
         counts = NORM*counts
         spl, smoothed = reconstruct_LF(bcs, counts, step, colours[t], t)
         spls.append(spl)
@@ -158,8 +83,11 @@ def plot_Method(pnts_fn):
         ])
 
 if __name__ == "__main__":
+    print("SALF")
     plot_Method(SALF_Points)
     plt.title("SALF")
+    print()
+    print("Monte Carlo")
     plot_Method(MC_Points)
     plt.title("Monte Carlo")
     # iso = Isochrone()

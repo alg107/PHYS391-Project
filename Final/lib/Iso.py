@@ -171,12 +171,11 @@ class Isochrone():
 
                 
                 for i, sec in enumerate(split_pnts):
-                    if len(sec)!=0:
-                        sec = sec[sec[:,0].argsort()]
-                        mmin = sec[:,0].min()
-                        mmax = sec[:,0].max()
-                        spl = UnivariateSpline(sec[:,0], sec[:,1], k=1, s=0)
-                        spls[z][t].append((spl, mmin, mmax))
+                    sec = sec[sec[:,0].argsort()]
+                    mmin = sec[:,0].min()
+                    mmax = sec[:,0].max()
+                    spl = UnivariateSpline(sec[:,0], sec[:,1], k=1, s=0)
+                    spls[z][t].append((spl, mmin, mmax))
 
         self.inv_spl_dict = spls
         return spls

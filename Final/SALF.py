@@ -26,7 +26,7 @@ def phi(M, z, typs):
         phi_c += chabrier(m)*np.abs(derivs[i])
     return phi_c
 
-RES = 500000
+RES = 1000
 x = np.linspace(-3.5, 1.0, RES)
 
 def Phi(M, typ):
