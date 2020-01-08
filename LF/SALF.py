@@ -30,12 +30,12 @@ RES = 1000
 x = np.linspace(-3.5, 1.0, RES)
 
 def Phi(M, typ):
-    zs = iso.zs
-    phis = np.array([phi(M, z, [typ]) for z in zs])
+    #zs = iso.zs
+    zs = np.linspace(-100.0, 100.0, 1000) # This was where the bug was
+    phis = np.array([phi(M, z, [typ]) for z in zs]) 
     MDFs = np.array([MDF(z) for z in zs])
     ys = phis*MDFs
     I = trapz(ys, zs)
-    #print(I)
     return I
 
 

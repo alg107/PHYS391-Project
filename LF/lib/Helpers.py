@@ -51,7 +51,7 @@ def pnts_from_samples(fname, bins):
 
     # Centres from edges
     bin_centres = (bin_edges[:-1] + bin_edges[1:])/2.
-    return bin_centres, counts, (xmax-xmin)/BINS, MC_NORM
+    return bin_centres, counts, (xmax-xmin)/BINS, MC_NORM, "MC"
 
 # SECTION FOUR: Method Specific Wrappers
 
@@ -64,4 +64,4 @@ def MC_Points(t):
 def SALF_Points(t):
     xs = np.load("Results/SALF/xs_t"+str(t)+".npy")
     ys = np.load("Results/SALF/ys_t"+str(t)+".npy")
-    return xs, ys, xs[1]-xs[0], SALF_NORM
+    return xs, ys, xs[1]-xs[0], SALF_NORM, "SA"

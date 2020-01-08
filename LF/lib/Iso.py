@@ -6,7 +6,6 @@ from scipy.interpolate import interp1d, UnivariateSpline, NearestNDInterpolator
 from progressbar import ProgressBar as pb
 from scipy.stats import binned_statistic_2d
 
-
 # Classifies stage based on statement in paper 1
 def classify_stage(val):
     # 1: Red Giant
@@ -21,6 +20,9 @@ def classify_stage(val):
 classify_stageV = np.vectorize(classify_stage)
 
 # Gets a colour given a number from 1-3
+# This should be a dictionary but I can't
+# be bothered going through and changing
+# everywhere I've used it
 def colour_from_type(typ):
     if typ==1:
         return "red"
@@ -214,12 +216,6 @@ class Isochrone():
         plt.imshow(plot_arr.statistic.T, aspect='auto',  extent=extent)
         plt.colorbar()
 
-    def interpolate2(self, m, z):
-        x_idx = find_neighbour(self.df_ret.x_edge, m)
-        y_idx = find_neighbour(np.flip(self.df_ret.y_edge), z)
-        return self.df_ret.statistic[x_idx, y_idx]
-    interpolate2V = np.vectorize(interpolate2)
-
     def interpolate(self, m, z):
         closest_z = find_nearest(self.zs, z)
         for i, typ in enumerate(self.typs):
@@ -239,8 +235,12 @@ class Isochrone():
             spls = self.inv_spl_dict[closest_z][typ]
             for spl, mmin, mmax in spls:
                 if Kmag >= mmin and Kmag <= mmax: 
-                    results.append(float(spl(Kmag)))
-                    dresults.append(float(spl.derivative()(Kmag)))
+                    val = float(spl(Kmag))
+                    # Not really needed but this just
+                    # stops extrema from being counted twice
+                    if not val in results:
+                        results.append(val)
+                        dresults.append(float(spl.derivative()(Kmag)))
         return results, dresults
 
     def plot_slice(self, z, w_spl=True):

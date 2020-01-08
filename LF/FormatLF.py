@@ -13,18 +13,21 @@ from lib.Constants import *
 """
 This script is to be run after samples have been generated
 with MonteCarlo.py and SALF.py
+
+It smooths and presents the data as well as doing some nice
+analysis on it
 """
 
 # SECTION THREE: The Reconstruction (Very Important)
 
 # Plots a given branch from its points (does smoothing)
-def reconstruct_LF(bin_centres, counts, step, color, t):
+def reconstruct_LF(bin_centres, counts, step, color, t, method):
 
     # Convolving with gaussian
     smoothed = gaussian_filter(counts, sigma/step)
 
     x = np.linspace(xmin, xmax, 10000)
-    spl = UnivariateSpline(bin_centres, smoothed, k=3, s=0) # Cubic
+    spl = UnivariateSpline(bin_centres, smoothed, k=1, s=0) # Cubic
     if t == 1:
         # Just snapping off the exponential background
         # very roughly
@@ -61,9 +64,9 @@ def plot_Method(pnts_fn):
     for t in typs:
         
         # Calls the above functions
-        bcs, counts, step, NORM = pnts_fn(t)
+        bcs, counts, step, NORM, method = pnts_fn(t)
         counts = NORM*counts
-        spl, smoothed = reconstruct_LF(bcs, counts, step, colours[t], t)
+        spl, smoothed = reconstruct_LF(bcs, counts, step, colours[t], t, method)
         spls.append(spl)
 
     x = np.linspace(xmin, xmax, 10000)
