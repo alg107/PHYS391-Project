@@ -73,7 +73,7 @@ def plot_Method(pnts_fn):
     y = x*0
     for spl in spls:
         y = y+spl(x)
-    plt.plot(x,y, color="black", linestyle="-.")
+    plt.plot(x,y, linestyle="-.", color='black')
     area = simps(y,x)
     print("Area:", area)
 
@@ -84,15 +84,36 @@ def plot_Method(pnts_fn):
         "Asymptotic Giant Branch",
         "Total"
         ])
+    return x,y
+
+def plot_comparison(x, y1, y2):
+    fig, (ax1, ax2) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [4, 1]}, sharex=True)
+    ax1.set_ylabel("Luminosity Function (Arbitrary Units)")
+    ax2.set_xlabel("$M_{K_s}$")
+    ax2.set_ylabel("Difference $\\times 10^2$")
+
+    #plt.ylim(0.0, 1.3) # Adjust as necessary
+    ax1.set_xlim(xmin, xmax)
+
+    ax1.plot(x, y1)
+    ax1.plot(x, y2)
+    ax2.plot(x, 100*np.abs(y2-y1), color="red")
+    ax1.legend([
+        "Monte Carlo",
+        "Semi-Analytic", 
+        ])
 
 if __name__ == "__main__":
-    print("SALF")
-    plot_Method(SALF_Points)
-    plt.title("SALF")
-    print()
     print("Monte Carlo")
-    plot_Method(MC_Points)
+    x, y1 = plot_Method(MC_Points)
     plt.title("Monte Carlo")
+    print()
+    print("SALF")
+    x, y2 = plot_Method(SALF_Points)
+    plt.title("SALF")
+
+    plot_comparison(x, y1, y2)
+
     # iso = Isochrone()
     # iso.plot()
     plt.show()

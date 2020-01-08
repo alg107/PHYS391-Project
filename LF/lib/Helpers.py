@@ -19,7 +19,7 @@ def setup_plot():
     plt.xlabel("$M_{K_s}$")
     plt.ylabel("Luminosity Function (Arbitrary Units)")
 
-    #plt.ylim(0.0, 1.3) # Adjust as necessary
+    plt.ylim(0.0, 1.3) # Adjust as necessary
     plt.xlim(xmin, xmax)
 
 
