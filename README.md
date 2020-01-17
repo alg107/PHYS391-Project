@@ -1,5 +1,10 @@
 # Running this code
 
+I would recommend using some kind of python environment 
+manager such as Anaconda or Virtual Environment. There are a few
+dependencies. Mostly things like Numpy, Scipy, Matplotlib etc. but there
+are a few other ones. I'll compile a dependencies list at some point.
+
 ## Luminosity Function (LF)
 
 Enter the LF folder and run
