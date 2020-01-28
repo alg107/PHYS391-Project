@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+
+"""
+FormatLF.py: Takes output from SALF.py and MonteCarlo.py,
+             processes it and presents it in a clean
+             format.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter

@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+
+"""
+SALF.py: Constructs a luminosity function using
+            the semi-analytic method
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd

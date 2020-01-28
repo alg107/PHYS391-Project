@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+
+"""
+Helpers.py: Contains definitions of several helper functions
+"""
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np

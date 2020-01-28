@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+
+"""
+Iso.py: An object oriented wrap for the Isochrone table.
+        provides methods for interpolation and visualisation
+        among other things.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -84,7 +92,7 @@ jiggle_pntV = np.vectorize(jiggle_pnt)
 
 class Isochrone():
     #def __init__(self, binx=750, biny=25, fname="iso.db"):
-    def __init__(self, binx=750, biny=25, fname="data/iso_big.db", typs=[1,2,3]):
+    def __init__(self, binx=200, biny=25, fname="data/iso_big.db", typs=[1,2,3]):
         # Taking the useful stuff from the isochrone table
         iso_table = np.loadtxt(fname)
         MH = iso_table[:,1]
@@ -215,6 +223,8 @@ class Isochrone():
                   plot_arr.y_edge[0], plot_arr.y_edge[-1]]
         plt.imshow(plot_arr.statistic.T, aspect='auto',  extent=extent)
         plt.colorbar()
+        plt.xlabel("Mass $m$")
+        plt.ylabel("Metallicity $z$")
 
     def interpolate(self, m, z):
         closest_z = find_nearest(self.zs, z)
@@ -281,11 +291,11 @@ if __name__=="__main__":
     # val = iso.interpolate(0.871, -0.744)
     # print(val)
 
-    # iso.colour_plot()
-    # print("Colour plot done")
-    iso.plot_inverse_slice(0.0)
-    var = iso.inverse_interpolate(-1.1, 0.0, [1])
-    print(var)
+    iso.colour_plot()
+    print("Colour plot done")
+    # iso.plot_inverse_slice(0.0)
+    # var = iso.inverse_interpolate(-1.1, 0.0, [1])
+    # print(var)
 
     plt.show()
 

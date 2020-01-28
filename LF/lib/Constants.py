@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+
+"""
+Constants.py: Contains definitions of global constants
+"""
+
 # Constant definition
 typs = [1,2,3]
 

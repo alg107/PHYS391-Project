@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+
+"""
+IMF.py: Provides an API for working with and generating
+        samples from the Chabrier (2003) initial mass
+        function
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import rv_continuous, lognorm
