@@ -1,8 +1,10 @@
+#!/usr/bin/env python
+
 """
-Monte-Carlo method using Iso.py Isochrone library
-Author: Alex Goodenbour
-Version: Outlier Fixed
+MonteCarlo.py: Constructs a luminosity function using
+            the Monte-Carlo method
 """
+
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as ss
@@ -10,13 +12,10 @@ import lib.IMF as IMF
 from progressbar import progressbar as pb
 import pandas as pd
 from lib.Iso import Isochrone
-# 1: Constant and Helper Function Definition
 
 
 # The number of samples of metallicity and IMF
 N = int(1e7)
-#N = int(1e9)
-
 
 
 # Metallicity
@@ -37,7 +36,6 @@ sampled_metallicities = np.random.normal(metallicity_mean, metallicity_std, N)
 
 plt.figure()
 plt.title("Metallicity Distribution")
-#metallicity_bins_seq = np.linspace(-2.279, 0.198, 39)
 plt.hist(sampled_metallicities, 100, density=True, histtype='step')
 X = np.linspace(-2*metallicity_std, 2*metallicity_std, 10000)
 plt.plot(X, ss.norm.pdf(X, metallicity_mean, metallicity_std))
@@ -48,10 +46,6 @@ print("Metallicity Done")
 
 # Sampling masses from lognormal IMF
 sampled_IMF = IMF.IMF_sample(N)
-##np.save("sampledIMF_N"+str(N), np.array(sampled_IMF))
-
-#sampled_IMF = IMF.load_samples()
-
 
 plt.figure()
 plt.title("IMF Distribution")
@@ -62,8 +56,8 @@ plt.plot(X, IMF.chabrier2_V(X))
 
 print("Masses Done")
 
-# 3: Isochrones
 
+# Plots the result
 def plot_samples(sampls, bins, title):
     plt.figure()
 
@@ -83,7 +77,6 @@ for t in [1,2,3]:
     iso = Isochrone(typs=[t])
 
     # This is the array in which we will build up our final histogram
-    # Cutting the isochrone into constant metallicity slices
     sampled_mags = []
     for i, m in pb(enumerate(sampled_IMF), max_value=N):
         val = iso.interpolate(m, sampled_metallicities[i])

@@ -8,6 +8,7 @@ Iso.py: An object oriented wrap for the Isochrone table.
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import interp1d, UnivariateSpline, NearestNDInterpolator
@@ -28,9 +29,6 @@ def classify_stage(val):
 classify_stageV = np.vectorize(classify_stage)
 
 # Gets a colour given a number from 1-3
-# This should be a dictionary but I can't
-# be bothered going through and changing
-# everywhere I've used it
 def colour_from_type(typ):
     if typ==1:
         return "red"
@@ -79,8 +77,9 @@ def norm(x, m, s):
 def MDF(z):
     return norm(z, 0.0, 0.4)
 
-# jiggles points very very slightly just to get around the restriction on
-# not having points with equal x-values
+# jiggles points very very slightly just to get around 
+# the spline restriction of not allowing points with equal
+# x-values
 def jiggle_pnts(pnts):
     return np.array([np.random.random()*0.00000001+i for i in pnts])
 
@@ -90,6 +89,7 @@ def jiggle_pnt(pnt):
 jiggle_pntV = np.vectorize(jiggle_pnt)
 
 
+# Object oriented wrap for the isochrone table
 class Isochrone():
     #def __init__(self, binx=750, biny=25, fname="iso.db"):
     def __init__(self, binx=200, biny=25, fname="data/iso_big.db", typs=[1,2,3]):
@@ -101,14 +101,10 @@ class Isochrone():
         types = iso_table[:,9]
         df_arr = np.column_stack((MH, masses, Kmag, classify_stageV(types)))
         df = pd.DataFrame(df_arr, columns=["MH", "masses", "Kmag", "types"])
-        # df_full = df.copy()
 
-        #df = df[df['Kmag'].between(-3.5, 1.0)]
         df = df[df['Kmag'].between(-5.0, 2.0)]
         df['Kmag'] = jiggle_pntV(df['Kmag'])
         df['masses'] = jiggle_pntV(df['masses'])
-
-        # Insert filtering code for types==3
 
         self.typs = typs
         self.df = df
@@ -146,9 +142,6 @@ class Isochrone():
             for t in self.typs:
                 spls[z][t] = []
                 df_local = self.df[(self.df['MH']==z)&(self.df['types']==t)]
-                # df_local = df_local.drop_duplicates(subset=['masses'])
-                # df_local = df_local.drop_duplicates(subset=['Kmag'])
-                # df_local = df_local.sort_values(by="masses")
 
                 pnts = np.column_stack((df_local.Kmag, df_local.masses))
                 pnts = pnts[pnts[:,1].argsort()]
@@ -161,9 +154,6 @@ class Isochrone():
                         # print("Relative Maxima")
                         split_idx.append(i)
                 split_pnts = np.split(pnts, split_idx)
-
-
-
 
                 # This loop just puts extrema in both sides' splines
                 for i, j in enumerate(split_pnts[:-1]):
@@ -196,7 +186,8 @@ class Isochrone():
 
         if df is None:
             df = self.df
-        # Plotting these 3 vars in a box just to get a feel for the data
+        # Plotting these 3 vars in a box just
+        # to get a feel for the data
         fig = plt.figure()
         ax = Axes3D(fig)
         plt.title("Isochrone mass-magnitude")
@@ -205,10 +196,8 @@ class Isochrone():
            filt = df[df["types"]==typ]
            ax.scatter(filt["masses"], filt["MH"], filt["Kmag"], marker=".", 
                    color=colour_from_type(typ))
-        #ax.scatter(df["masses"], df["Kmag"], df["MH"], marker=".")
         x = 0.9
         y = -0.7
-        #ax.scatter(x, y, isochrone(x,y, df), marker=".", color="orange")
         ax.set_xlabel("Mass ($m$)")
         ax.set_ylabel("Metallicity ($z$)")
         ax.set_zlabel("Magnitude ($M_{K_s}$)")
@@ -222,7 +211,8 @@ class Isochrone():
                   plot_arr.x_edge[-1],
                   plot_arr.y_edge[0], plot_arr.y_edge[-1]]
         plt.imshow(plot_arr.statistic.T, aspect='auto',  extent=extent)
-        plt.colorbar()
+        cbar = plt.colorbar()
+        cbar.ax.set_ylabel("Absolute Magnitude $M_{K_s}$")
         plt.xlabel("Mass $m$")
         plt.ylabel("Metallicity $z$")
 
@@ -283,19 +273,15 @@ class Isochrone():
 
 if __name__=="__main__":
 
+    matplotlib.rcParams['mathtext.fontset'] = 'stix'
+    matplotlib.rcParams['font.family'] = 'STIXGeneral'
+
     iso = Isochrone()
     iso.plot()
 
-    # print("3D isochrone plot done")
-
-    # val = iso.interpolate(0.871, -0.744)
-    # print(val)
-
     iso.colour_plot()
+    plt.tight_layout()
     print("Colour plot done")
-    # iso.plot_inverse_slice(0.0)
-    # var = iso.inverse_interpolate(-1.1, 0.0, [1])
-    # print(var)
 
     plt.show()
 

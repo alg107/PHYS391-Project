@@ -56,13 +56,14 @@ def reconstruct_LF(bin_centres, counts, step, color, t, method):
         y = spl(x)
         plt.plot(x, y, color=color)
 
-    # Fit parameters to RC
+    # Fit parameters to Red Clump
     if t==2:
         RC_sigma(x, spl(x))
 
     return spl, smoothed
 
 
+# Plots a given method
 def plot_Method(pnts_fn):
     plt.figure()
     setup_plot()
@@ -94,20 +95,21 @@ def plot_Method(pnts_fn):
         ])
     return x,y
 
+# Gives a comparison plot of the two methods
 def plot_comparison(x, y1, y2):
     fig, (ax1, ax2) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [4, 1]}, sharex=True)
     ax1.set_ylabel("Luminosity Function (Arbitrary Units)")
     ax2.set_xlabel("$M_{K_s}$")
-    ax2.set_ylabel("Difference $\\times 10^2$")
+    ax2.set_ylabel("Rel. Difference")
 
     #plt.ylim(0.0, 1.3) # Adjust as necessary
     ax1.set_xlim(xmin, xmax)
 
     ax1.plot(x, y1)
     ax1.plot(x, y2)
-    ax2.plot(x, 100*np.abs(y2-y1), color="red")
+    ax2.plot(x, np.abs(y2-y1)/y1, color="red")
     ax1.legend([
-        "Monte Carlo",
+        "Monte-Carlo",
         "Semi-Analytic", 
         ])
 
@@ -115,14 +117,14 @@ if __name__ == "__main__":
     print("Monte Carlo")
     x, y1 = plot_Method(MC_Points)
     plt.title("Monte Carlo")
+    plt.tight_layout()
     print()
     print("SALF")
     x, y2 = plot_Method(SALF_Points)
+    plt.tight_layout()
     plt.title("SALF")
 
     plot_comparison(x, y1, y2)
 
-    # iso = Isochrone()
-    # iso.plot()
     plt.show()
 

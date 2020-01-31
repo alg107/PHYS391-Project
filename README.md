@@ -31,3 +31,6 @@ can just navigate into the VVV folder and run
 ```bash
 python display.py
 ```
+
+NOTE: This branch contains versions of files as they were used to generate
+plots in the report. The code presented in the report has also been cleaned up.

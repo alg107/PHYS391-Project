@@ -17,7 +17,6 @@ from lib.IMF import chabrier2 as chabrier
 
 iso = Isochrone()
 
-
 # Normal distribution
 def norm(x, m, s):
     return (1/np.sqrt(2*np.pi*s**2))*np.exp(-((x-m)**2/(2*s**2)))
@@ -38,7 +37,7 @@ x = np.linspace(-3.5, 1.0, RES)
 
 def Phi(M, typ):
     #zs = iso.zs
-    zs = np.linspace(-100.0, 100.0, 1000) # This was where the bug was
+    zs = np.linspace(-100.0, 100.0, 1000) 
     phis = np.array([phi(M, z, [typ]) for z in zs]) 
     MDFs = np.array([MDF(z) for z in zs])
     ys = phis*MDFs
@@ -51,7 +50,7 @@ plt.xlabel("Magnitude")
 plt.ylabel("Luminosity Function (Arbitrary Units)")
 
 for i in pb([1,2,3], redirect_stdout=True):
-    # Smoothing and plotting
+    # Plotting the results
     ys = np.array([Phi(M, i) for M in x])
     np.save("Results/SALF/xs_t"+str(i), x)
     np.save("Results/SALF/ys_t"+str(i), ys)
