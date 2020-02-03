@@ -91,13 +91,13 @@ jiggle_pntV = np.vectorize(jiggle_pnt)
 
 
 class Isochrone():
-    #def __init__(self, binx=750, biny=25, fname="iso.db"):
-    def __init__(self, binx=200, biny=25, fname="data/iso_big.db", typs=[1,2,3]):
+    def __init__(self, binx=200, biny=25, fname="data/iso.db", typs=[1,2,3]):
         # Taking the useful stuff from the isochrone table
         iso_table = np.loadtxt(fname)
         MH = iso_table[:,1]
         masses = iso_table[:,3]
-        Kmag = iso_table[:,32]
+        # Kmag = iso_table[:,32]
+        Kmag = iso_table[:,29]
         types = iso_table[:,9]
         df_arr = np.column_stack((MH, masses, Kmag, classify_stageV(types)))
         df = pd.DataFrame(df_arr, columns=["MH", "masses", "Kmag", "types"])
