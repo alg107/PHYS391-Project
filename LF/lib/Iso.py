@@ -8,6 +8,7 @@ Iso.py: An object oriented wrap for the Isochrone table.
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import interp1d, UnivariateSpline, NearestNDInterpolator
@@ -255,8 +256,11 @@ class Isochrone():
 
     def plot_slice(self, z, w_spl=True):
         closest_z = find_nearest(self.zs, z)
+        print("Closest z:", closest_z)
         local_df = self.df[self.df["MH"]==closest_z]
         pl = plt.figure()
+        plt.xlabel('Mass $m$')
+        plt.ylabel('Absolute Magnitude $M_{K_s}$')
         for i, typ in enumerate(self.typs):
             df2 = local_df[local_df["types"]==typ]
             plt.scatter(df2["masses"], df2["Kmag"], color=colour_from_type(typ))
@@ -270,6 +274,8 @@ class Isochrone():
         closest_z = find_nearest(self.zs, z)
         local_df = self.df[self.df["MH"]==closest_z]
         pl = plt.figure()
+        plt.xlabel('Absolute Magnitude $M_{K_s}$')
+        plt.ylabel('Mass $m$')
         for typ in self.typs:
             df2 = local_df[local_df["types"]==typ]
             plt.scatter(df2["Kmag"], df2["masses"], color=colour_from_type(typ))
@@ -283,6 +289,9 @@ class Isochrone():
 
 if __name__=="__main__":
 
+    matplotlib.rcParams['mathtext.fontset'] = 'stix'
+    matplotlib.rcParams['font.family'] = 'STIXGeneral'
+
     iso = Isochrone()
     iso.plot()
 
@@ -290,6 +299,7 @@ if __name__=="__main__":
 
     # val = iso.interpolate(0.871, -0.744)
     # print(val)
+    iso.plot_inverse_slice(0.0)
 
     iso.colour_plot()
     print("Colour plot done")
