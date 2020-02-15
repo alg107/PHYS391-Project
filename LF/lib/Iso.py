@@ -300,6 +300,7 @@ if __name__=="__main__":
     # val = iso.interpolate(0.871, -0.744)
     # print(val)
     iso.plot_inverse_slice(0.0)
+    iso.plot_slice(0.0)
 
     iso.colour_plot()
     print("Colour plot done")
