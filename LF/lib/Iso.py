@@ -15,6 +15,7 @@ from scipy.interpolate import interp1d, UnivariateSpline, NearestNDInterpolator
 from progressbar import ProgressBar as pb
 from scipy.stats import binned_statistic_2d
 
+
 # Classifies stage based on statement in paper 1
 def classify_stage(val):
     # 1: Red Giant
@@ -223,7 +224,8 @@ class Isochrone():
                   plot_arr.x_edge[-1],
                   plot_arr.y_edge[0], plot_arr.y_edge[-1]]
         plt.imshow(plot_arr.statistic.T, aspect='auto',  extent=extent)
-        plt.colorbar()
+        c = plt.colorbar()
+        c.ax.set_ylabel('Absolute Magnitude $M_{K_s}$')
         plt.xlabel("Mass $m$")
         plt.ylabel("Metallicity $z$")
 
@@ -291,6 +293,7 @@ if __name__=="__main__":
 
     matplotlib.rcParams['mathtext.fontset'] = 'stix'
     matplotlib.rcParams['font.family'] = 'STIXGeneral'
+    matplotlib.rcParams.update({'font.size': 13})
 
     iso = Isochrone()
     iso.plot()

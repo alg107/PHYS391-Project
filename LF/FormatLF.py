@@ -16,6 +16,9 @@ from lib.Helpers import (gauss, setup_plot, colours,
                         RC_sigma, pnts_from_samples, 
                         MC_Points, SALF_Points)
 from lib.Constants import *
+import matplotlib
+
+matplotlib.rcParams.update({'font.size': 13})
 
 
 """
